@@ -9,7 +9,6 @@ providers = ["ollama", "deepseek", "openai"]
 [deepseek]
 # deepseek api key 必填, 可以通过环境变量 DEEPSEEK_API_KEY 覆盖
 api_key = "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-
 # 默认模型 deepseek-v4-flash
 model = "deepseek-v4-flash"
 
@@ -35,6 +34,15 @@ api_base = "https://api.openai.com/v1"
 url = "http://localhost:11434"
   # 模型名称（必填，如 llama2, mistral, codellama）
 model = "qwen3.5:4b"
+[ollama.options]
+# 温度，越低越稳定和保守
+temperature = 0.1
+# 保持默认即可
+top_p = 0.9
+# 模型输出的长度， 如果需要快速反应可以调小
+num_predict = 512
+#上下文窗口
+num_ctx = 4096
 
 # ============================================
 # 4. 测试与复习配置

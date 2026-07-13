@@ -61,6 +61,10 @@ func setDefaults() {
 
 	viper.SetDefault("ollama.url", "http://localhost:11434")
 	viper.SetDefault("ollama.model", "qwen3.5:4b")
+	viper.SetDefault("ollama.options.temperature", 0.1)
+	viper.SetDefault("ollama.options.top_p", 0.9)
+	viper.SetDefault("ollama.options.num_predict", 512)
+	viper.SetDefault("ollama.options.num_ctx", 4096)
 
 	viper.SetDefault("test.batch_size", 30)
 	viper.SetDefault("test.daily_limit", 100)

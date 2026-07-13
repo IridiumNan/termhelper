@@ -24,8 +24,16 @@ type OpenAIConfig struct {
 }
 
 type OllamaConfig struct {
-	URL   string `mapstructure:"url"`
-	Model string `mapstructure:"model"`
+	URL        string        `mapstructure:"url"`
+	Model      string        `mapstructure:"model"`
+	OllamaOpts OllamaOptions `mapstructure:"options"`
+}
+
+type OllamaOptions struct {
+	Temperature float32 `mapstructure:"temperature"`
+	TopP        float32 `mapstructure:"top_p"`
+	NumPredict  int     `mapstructure:"num_predict"`
+	NumCtx      int     `mapstructure:"num_ctx"`
 }
 
 type TestConfig struct {
