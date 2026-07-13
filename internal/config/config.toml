@@ -1,0 +1,71 @@
+# ~/.config/termhelper/config.toml
+
+# ============================================
+# 1. LLM 提供商选择
+# ============================================
+# 按照顺序依次尝试
+providers = ["ollama", "deepseek", "openai"]
+
+[deepseek]
+# deepseek api key 必填, 可以通过环境变量 DEEPSEEK_API_KEY 覆盖
+api_key = "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# 默认模型 deepseek-v4-flash
+model = "deepseek-v4-flash"
+
+api_base = "https://api.deepseek.com"
+
+
+# ============================================
+# 2. OpenAI 配置（provider = "openai" 时使用）
+# ============================================
+[openai]
+  # API Key（必填，也可通过环境变量 OPENAI_API_KEY 覆盖）
+api_key = "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  # 模型名称（可选，默认 gpt-3.5-turbo）
+model = "gpt-3.5-turbo"
+  # API 基础 URL（可选，用于代理或 Azure）
+api_base = "https://api.openai.com/v1"
+
+# ============================================
+# 3. Ollama 配置（provider = "ollama" 时使用）
+# ============================================
+[ollama]
+  # Ollama 服务地址（默认 localhost:11434）
+url = "http://localhost:11434"
+  # 模型名称（必填，如 llama2, mistral, codellama）
+model = "qwen3.5:4b"
+
+# ============================================
+# 4. 测试与复习配置
+# ============================================
+[test]
+# 每次从数据库加载的到期单词数（默认 30）
+batch_size = 30
+# 单次测试最大题目数（0 表示无限制，默认 100）
+daily_limit = 100
+
+
+# 熟练度更新参数（可根据实际效果调整）
+[test.proficiency]
+# 答对增加量（默认 0.12）
+correct_increment = 0.12
+# 答错减少量（默认 0.10）
+wrong_decrement = 0.10
+# 新词初始熟练度（默认 0.15）
+initial_value = 0.15
+# 最大间隔天数（熟练度为 1.0 时，默认 30 天）
+max_interval_days = 30
+
+# ============================================
+# 日志配置
+# ============================================
+[logging]
+# debug -4
+# info 0
+# warn 4
+# error 8
+# 日志级别: "debug", "info", "warn", "error"
+console_level = 0
+# 文件日志级别（默认 debug）
+file_level = -4

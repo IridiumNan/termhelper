@@ -1,0 +1,43 @@
+package models
+
+import (
+	"os"
+	"path/filepath"
+)
+
+func GetHomeDirPath() string {
+	return homeDir
+}
+
+func GetDataDirPath() string {
+	return filepath.Join(homeDir, dataDirPath, AppName)
+}
+
+func GetConfigDirPath() string {
+	userConfigPath, _ := os.UserConfigDir()
+	return filepath.Join(userConfigPath, AppName)
+}
+
+func GetLogDirPath() string {
+	return filepath.Join(homeDir, logDirPath, AppName)
+}
+
+func GetLogFilePath() string {
+	return filepath.Join(GetLogDirPath(), logFileName)
+}
+
+func GetConfigRawName() string {
+	return configFileType
+}
+
+func GetConfigType() string {
+	return configFileType
+}
+
+func getConfigFullName() string {
+	return configFileRawName + "." + configFileType
+}
+
+func GetConfigFilePath() string {
+	return filepath.Join(GetConfigDirPath(), getConfigFullName())
+}
