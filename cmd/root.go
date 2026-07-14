@@ -9,6 +9,7 @@ import (
 
 	"github.com/IridiumNan/termhelper/internal/config"
 	"github.com/IridiumNan/termhelper/internal/models"
+	"github.com/IridiumNan/termhelper/internal/output"
 	"github.com/IridiumNan/termhelper/pkg"
 	"github.com/spf13/cobra"
 )
@@ -72,12 +73,23 @@ func initConfig() error {
 	funcName := "initConfig"
 	err := config.LoadConfig()
 	if err != nil {
-		return pkg.ReportErrorInputErr(funcName+"Load config", err)
+		return pkg.ReportErrorInputErr(funcName+" Load config", err)
 	}
 
 	if err := initDataDir(); err != nil {
 		return pkg.ReportErrorInputErr(funcName, err)
 	}
+
+	output.InitConsoleLogger(config.GetGlobalConfig().Logging.ConsoleLevel)
+	err = output.InitFileLogger(config.GetGlobalConfig().Logging.FileLevel)
+	if err != nil {
+		return pkg.ReportErrorInputErr(funcName+" init file logger", err)
+	}
+
+	fmt.Println(output.RenderWordByProficiency("这是个新词", 0.1))
+	fmt.Println(output.RenderWordByProficiency("这是正在学习的词", 0.4))
+	fmt.Println(output.RenderWordByProficiency("这是熟悉的词", 0.6))
+	fmt.Println(output.RenderWordByProficiency("这是基本掌握的词", 0.9))
 
 	return nil
 }

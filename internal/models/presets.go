@@ -5,11 +5,17 @@ import (
 	"path/filepath"
 )
 
+type ModelName string
+
 const (
-	AppName           = "termhelper"
-	logFileName       = "log.txt"
-	configFileRawName = "config"
-	configFileType    = "toml"
+	AppName                     = "termhelper"
+	logFileName                 = "log.txt"
+	configFileRawName           = "config"
+	configFileType              = "toml"
+	dataFileName                = "words.db"
+	OllamaClientStr   ModelName = "ollama"
+	OpenAIClientStr   ModelName = "openai"
+	DeepSeekClientStr ModelName = "deepseek"
 )
 
 var (

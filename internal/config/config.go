@@ -16,7 +16,7 @@ var defaultConfigTemplate string
 const maxProviderIdx = 2
 
 var (
-	globalConfig       *models.Config
+	globalConfig       Config
 	currentProviderIdx int = 0
 )
 
@@ -82,7 +82,11 @@ func PrintConfig() {
 	fmt.Println(globalConfig)
 }
 
-func NextProvider() (string, error) {
+func GetGlobalConfig() Config {
+	return globalConfig
+}
+
+func NextProviderStr() (models.ModelName, error) {
 	if currentProviderIdx > maxProviderIdx {
 		return "", fmt.Errorf("all provider has been tried yet fail")
 	}

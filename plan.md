@@ -1,286 +1,328 @@
-# TermHelper 项目开发计划 (Plan) - 修订版
+# TermHelper 开发计划（最终版）
 
-## 1. 项目概述
+## 一、项目全景
 
-**TermHelper** 是一个面向计算机专业学生的 CLI 单词学习工具，专为技术英语（Linux 报错、编程语言文档、man 手册等）设计。它能够：
+### 核心理念
 
-- 自动从英文报错/文档中提取生词，**仅借助 LLM 给出中文释义（1~2 个词）**。
-- **例句直接取自用户输入的原始文本片段**（该词所在的句子或上下文），确保学习内容真实、有上下文。
-- 将新词加入复习队列，基于改进的 SM-2 算法进行间隔重复测试。
-- 根据熟练度动态调整复习间隔，弱词高频出现，强词低频出现。
-- 数据完全本地存储，支持云端大模型（OpenAI）和本地模型（Ollama）。
-- 编译为单一二进制文件，遵循 XDG 标准存放配置和数据，便于分发。
+- **所有词都值得学习**：不设停用词，全部进入词库
+- **按熟练度调度**：SM-2 变体，弱词高频、强词低频
+- **例句来自真实输入**：LLM 只负责释义，例句从用户文本提取
+- **批量导入支持**：可快速构建个人领域词库
+- **机制透明**：配置、数据、日志皆可触及，拒绝黑盒魔法
 
----
+### 技术栈
 
-## 2. 技术选型（不变）
+| 组件 | 选型 | 理由 |
+| ------ | ------ | ------ |
+| 语言 | Go 1.21+ | 静态编译，无依赖，跨平台 |
+| CLI | Cobra | 标准化子命令 |
+| 配置 | Viper + TOML | 默认值、环境变量、flag 绑定；TOML 易读 |
+| 模板嵌入 | `//go:embed` | 带注释的默认配置，独立文件维护 |
+| 存储 | BoltDB | 嵌入式 KV，无外部依赖 |
+| 日志 | `log/slog` | 标准库，结构化日志，双输出 |
+| LLM | 统一接口 + 工厂模式 | 支持 Ollama/OpenAI/DeepSeek，可 fallback |
 
-| 组件          | 选择                  | 理由                                                                 |
-|---------------|-----------------------|----------------------------------------------------------------------|
-| 编程语言      | Go 1.21+              | 编译为静态二进制，无依赖，跨平台，适合 CLI 工具。                    |
-| CLI 框架      | Cobra + Viper         | 标准化子命令（add, test, list, stats, config），配置管理方便。       |
-| 数据存储      | BoltDB（嵌入式 KV）   | 纯 Go 实现，无外部依赖，文件级数据库，适合本地轻量存储。             |
-| LLM 客户端    | 自定义接口（OpenAI / Ollama） | 支持云端和本地模型，用户可配置。                                     |
-| 构建工具      | Go 官方工具 + Makefile | 交叉编译多平台（Linux/macOS/Windows）。                              |
-| 配置/数据路径 | XDG Base Directory     | `~/.config/termhelper/`（配置），`~/.local/share/termhelper/`（数据） |
+### 数据存储（XDG）
 
----
+```
+~/.config/termhelper/config.toml    # 配置文件
+~/.local/share/termhelper/words.db  # BoltDB 词库
+~/.local/share/termhelper/logs/termhelper.log  # 日志
+```
 
-## 3. 核心模块划分（略作调整）
+### 目录结构
 
 ```
 termhelper/
-├── cmd/                     # Cobra 命令
-│   ├── root.go
-│   ├── add.go
-│   ├── test.go
-│   ├── list.go
-│   ├── stats.go
-│   └── config.go
+├── cmd/
+│   ├── root.go          # 主命令，初始化配置/日志
+│   ├── add.go           # 从文本提取新词
+│   ├── test.go          # 复习测试
+│   ├── list.go          # 列出词库
+│   ├── stats.go         # 统计信息
+│   ├── import.go        # 批量导入
+│   └── config_cmd.go    # 配置管理（可选）
 ├── internal/
-│   ├── storage/            # 数据库操作（BoltDB）
-│   │   ├── db.go           # 初始化、bucket 创建
-│   │   ├── word.go         # 单词 CRUD + 索引更新
-│   │   └── schedule.go     # 查询到期单词、更新 next_review_due
-│   ├── llm/                # LLM 客户端抽象
-│   │   ├── client.go       # 接口定义
-│   │   ├── openai.go
-│   │   └── ollama.go
-│   ├── extractor/          # 生词提取 + 例句提取（新增）
-│   │   ├── extract.go      # 分词、过滤、词形还原
-│   │   └── sentence.go     # 从原文中截取单词所在的句子作为例句
-│   ├── tester/             # 测试逻辑
-│   │   ├── quiz.go         # 出题、选项生成、交互
-│   │   └── proficiency.go  # 熟练度更新算法
-│   └── config/             # 配置管理（Viper）
-│       └── config.go
-├── pkg/                    # 可复用工具
-│   └── xdg/                # XDG 路径工具
-├── go.mod
+│   ├── config/
+│   │   ├── config.go           # 加载、验证
+│   │   └── config.toml.tmpl    # 带注释的默认配置（embed）
+│   ├── models/
+│   │   ├── word.go       # Word, Example
+│   │   ├── extract.go    # ExtractedWord
+│   │   └── llm.go        # WordRequest, WordResponse, ImportRequest, ImportResponse
+│   ├── storage/
+│   │   ├── db.go         # 打开/关闭 BoltDB
+│   │   ├── word.go       # CRUD + 索引维护
+│   │   └── schedule.go   # 查询到期词、更新调度
+│   ├── llm/
+│   │   ├── client.go         # LLMClient 接口
+│   │   ├── factory.go        # NewClient（按 providers 顺序 fallback）
+│   │   ├── openai_compatible.go  # 共享底层实现（OpenAI/DeepSeek）
+│   │   ├── openai.go         # OpenAIClient（语义包装）
+│   │   ├── deepseek.go       # DeepSeekClient（语义包装）
+│   │   └── ollama.go         # OllamaClient
+│   ├── extractor/
+│   │   ├── extract.go    # 分词、去重、过滤
+│   │   └── sentence.go   # 定位单词所在句子
+│   ├── tester/
+│   │   ├── quiz.go       # 出题、选项生成、交互
+│   │   └── proficiency.go # 熟练度更新
+│   ├── output/
+│   │   └── render.go     # 高亮、颜色、格式化输出
+│   └── logger/
+│       └── logger.go     # 全局 Console/File Logger
+├── pkg/
+│   └── xdg/              # XDG 路径工具
 ├── main.go
-└── Makefile
+├── go.mod
+├── go.sum
+├── Makefile
+└── README.md
 ```
 
----
-
-## 4. 数据存储设计（BoltDB）【变更：例句来源】
-
-BoltDB 为单文件 `words.db`，包含以下 Bucket：
-
-### 4.1 Bucket: `words`
-
-存储每个单词的完整信息。**Key** = 单词小写（string），**Value** = JSON 对象。
-
-```json
-{
-  "word": "compile",
-  "definition": "编译",                    // LLM 生成的中文释义（1~2个词）
-  "examples": [                           // 例句直接来自用户输入的原始文本
-    {"en": "Please compile the source code before running.", "context": "…整个原始段落或文件名…"},
-    {"en": "The compiler threw an error."}   // 可保留其他出现的句子
-  ],
-  "proficiency": 0.15,
-  "last_reviewed": 0,
-  "next_review_due": 0,
-  "created_at": 1704067200
-}
-```
-
-- **`examples` 数组**：存储该单词在用户历史输入中出现的原始句子（去重）。每个条目包含 `en`（英文原句）和可选的 `context`（整个段落或文件名，便于溯源）。**不需要中文翻译**，因为学习目标是理解原文。
-- 当同一个单词再次出现在新的输入中，我们可以追加新的例句（去重后），丰富学习材料。
-
-### 4.2 Bucket: `due_index` (二级索引)
-
-不变，用于按 `next_review_due` 排序查询到期单词。  
-**Key** = `fmt.Sprintf("%020d:%s", next_review_due, word)`  
-**Value** = 空（仅用于占位）
-
-### 4.3 Bucket: `metadata`
-
-存储全局元数据（如版本、统计信息等），暂不扩展。
-
----
-
-## 5. 核心处理链路【变更：例句提取】
-
-1. **用户输入**原始英文文本（报错、手册片段等）。
-2. **分词与过滤**：拆分成 token，去除数字、符号，进行简单的词形还原（小写、去复数等）。
-3. **排除已存在词库**：只保留未记录的生词。
-4. **例句提取**：对每个生词，在其原始输入文本中定位该词所在句子（按 `.` `!` `?` 等标点分割，若未找到则取前后若干词），作为该词的例句存入 `examples` 列表（若该句与已有例句重复则跳过）。
-5. **调用 LLM**：仅针对该生词（带上上下文句子）请求**中文释义（1~2 个中文词）**，不要求生成例句。
-6. **存储新词**：写入 `words`，初始 proficiency=0.15，`next_review_due=now`，并插入 `due_index` 索引。
-7. 输出处理结果。
-
----
-
-## 6. SM-2 调度算法实现（不变）
-
-### 6.1 熟练度（Proficiency）
-
-- 范围：`0.0 ~ 1.0`
-- 初始值：`0.15`（新词）
-- 更新规则：
-  - 答对：`proficiency = min(1.0, proficiency + 0.12)`
-  - 答错：`proficiency = max(0.0, proficiency - 0.10)`
-
-### 6.2 复习间隔计算
-
-```go
-func nextInterval(proficiency float64) int64 {
-    days := 1 + proficiency * 30
-    return int64(math.Floor(days))
-}
-```
-
-实际 `next_review_due = last_reviewed + interval * 86400`。
-
-### 6.3 查询到期单词（不变）
-
-`test` 命令执行时，从 `due_index` 中获取 `next_review_due <= now` 的单词，按顺序取前 `batch_size` 个。
-
-### 6.4 测试流程【变更：例句展示】
-
-1. 对每个到期单词，从 `examples` 列表中**随机选取一个例句**（原文句子）显示在屏幕上，目标单词用黄色高亮。
-2. 生成 4 个中文释义选项：正确选项 + 3 个干扰项（从词库中随机抽取不同单词的 `definition`）。
-3. 用户选择后：
-   - 正确：绿色输出“正确”，更新 proficiency += 0.12
-   - 错误：红色输出正确释义，更新 proficiency -= 0.10
-4. 更新 `last_reviewed = now`，重新计算 `next_review_due`。
-5. 更新数据库（单词记录 + 删除旧索引 Key + 插入新索引 Key）。
-6. 按回车继续下一题。
-
-### 6.5 干扰项生成（不变）
-
-从词库中随机选取 3 个**不同单词**的 definition，确保不与正确答案重复。若词库不足，则用占位符。
-
----
-
-## 7. CLI 命令详细设计【变更：add 流程】
-
-### 7.1 全局 Flags（不变）
-
-### 7.2 `add` 子命令
-
-```bash
-termhelper add [text]          # 从参数读取文本
-termhelper add -f file.txt     # 从文件读取
-echo "error message" | termhelper add   # 从 stdin 读取
-```
-
-**处理流程**：
-
-1. 读取输入文本。
-2. 提取所有候选 token，过滤已有词库中的词。
-3. 对每个新词，**从输入文本中提取该词所在的句子**（作为例句）。
-4. 调用 LLM（传递该词和上下文句子）获取中文释义。
-5. 存储新词，包含释义和提取的例句（至少一个）。
-6. 打印添加成功的单词数量及释义。
-
-**注意**：若同一个单词在输入中出现多次，可提取多个不同句子作为例句，但存储时去重。
-
-### 7.3 `test` 子命令（不变）
-
-### 7.4 `list` 子命令（不变）
-
-### 7.5 `stats` 子命令（不变）
-
-### 7.6 `config` 子命令（不变）
-
----
-
-## 8. LLM 集成【变更：Prompt 及返回格式】
-
-### 8.1 接口定义（不变）
-
-```go
-type LLMClient interface {
-    Explain(word, context string) (*WordEntry, error)  // 只返回释义，不含例句
-}
-```
-
-### 8.2 Prompt 模板（修改）
+## 二、数据流总览
 
 ```
-You are a technical English tutor. Given the following context from a software development error message or manual:
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           完整处理链路                                       │
+└─────────────────────────────────────────────────────────────────────────────┘
 
-Context sentence: "<sentence>"
-Word to explain: "<word>"
-
-Provide a short Chinese definition (1-2 Chinese words) for this word in this technical context.
-Only return the definition, nothing else. Do not provide examples or extra text.
+[0] 输入采集
+    │  stdin / -f file / 命令行参数
+    ▼
+    rawText: string
+    │
+    ▼
+[1] 预处理（extractor）
+    │  分词 → 去符号 → 小写 → 去重
+    ▼
+    allTokens: []string
+    │
+    ▼
+[2] 词库比对（storage）
+    │  查询词库 → 分出「已存在」和「新词」
+    ▼
+    newWords: []string (去重，无停用词过滤)
+    │
+    ▼
+[3] 长度控制
+    │  若 rawText 超长 → 按句子拆分为多个片段
+    ▼
+    tasks: []SegmentTask{Context, Words}
+    │
+    ▼
+[4] LLM 批量解释（llm）
+    │  构建 Prompt → 调用 ExplainBatch
+    ▼
+    responses: []WordResponse{Word, Definition, Examples}
+    │
+    ▼
+[5] 存储（storage）
+    │  写入 BoltDB（Proficiency=0.15，NextReviewDue=now）
+    ▼
+    (持久化)
+    │
+    ▼
+[6] 输出展示（output）
+    │  原文本高亮（按熟练度颜色）→ 下方列表（按熟练度升序）
+    ▼
+   终端
 ```
 
-**返回格式**：仅字符串，如 `"编译"`。
+## 三、开发阶段（共 8 个阶段）
 
-### 8.3 OpenAI / Ollama 实现（不变，但解析简化为纯文本）
+### 阶段 0：项目脚手架（0.5 天）
 
-### 8.4 错误处理与重试（不变）
+**目标**：可编译运行的空 CLI
 
----
+| 任务 | 产出 |
+| ------ | ------ |
+| `go mod init` | go.mod |
+| 安装 Cobra/Viper/BoltDB | 依赖 |
+| `cobra-cli init` | cmd/root.go, main.go |
+| 添加子命令骨架（add, test, list, stats, import） | cmd/*.go |
+| 编写 Makefile | 编译/运行/测试 |
 
-## 9. 配置管理（不变，但需调整配置项？不涉及）
+**验收**：`go build` 成功，`./termhelper --help` 显示帮助
 
----
+### 阶段 1：XDG 目录 + 配置模块（1 天）
 
-## 10. 实现步骤与里程碑【调整优先级】
+**目标**：首次运行自动创建目录和带注释的配置文件
 
-### 阶段 1：基础框架（第 1-2 天）- 不变
+| 任务 | 产出 |
+| ------ | ------ |
+| 实现 XDG 路径工具（pkg/xdg） | ~/.config, ~/.local/share 路径解析 |
+| 创建 config.toml.tmpl（带详细注释） | internal/config/config.toml.tmpl |
+| 实现 config.Load() | 读取/写入/默认值/环境变量 |
+| 实现 config.Get() / Validate() | 全局配置访问 |
+| 在 root.go 的 PersistentPreRun 中调用 | 启动时加载 |
 
-### 阶段 2：存储层（第 3-4 天）- 不变，但需适配新字段
+**验收**：
 
-### 阶段 3：LLM 客户端（第 5-6 天）- 调整为只返回释义字符串
+- 首次运行自动生成 `~/.config/termhelper/config.toml`（带注释）
+- 配置文件缺失字段时使用默认值
+- 可通过 `TERMHELPER_PROVIDER=openai` 覆盖
 
-### 阶段 4：生词提取 + 例句提取（第 7-8 天）【新增关键任务】
+### 阶段 2：日志模块（0.5 天）
 
-- 实现 `extractor/sentence.go`：按标点分割句子，并定位目标单词所在的句子（需处理大小写、标点包围的情况）。
-- 实现例句去重（基于句子内容哈希）。
+**目标**：终端 + 文件双输出
 
-### 阶段 5：`add` 命令（第 9-10 天）- 集成上述提取和 LLM 调用
+| 任务 | 产出 |
+| ------ | ------ |
+| 实现 logger.Init() | 依赖 config.Logging |
+| Console Logger（TextHandler，stderr） | 用户可见信息 |
+| File Logger（JSONHandler，追加模式） | 详细调试日志 |
+| 颜色支持（可选，后续可完善） | 终端输出彩色 |
 
-### 阶段 6：`test` 命令（第 11-14 天）- 展示例句（原文），而不是模型生成例句
+**验收**：
 
-### 阶段 7：其他命令（第 15 天）
+- `logger.Console.Info("hello")` 输出到终端
+- `logger.File.Debug("detail")` 写入日志文件
+- 日志目录自动创建
 
-### 阶段 8：打磨与测试（第 16-18 天）
+### 阶段 3：数据模型 + 存储层（2 天）
 
-### 阶段 9：构建与发布（第 19 天）
+**目标**：词库 CRUD + 熟练度调度
 
----
+| 任务 | 产出 |
+| ------ | ------ |
+| 定义 models.Word, Example | internal/models/word.go |
+| 实现 storage.Open() | BoltDB 初始化，创建 buckets |
+| 实现 word CRUD（Put/Get/List/Delete） | 词条读写 |
+| 实现索引维护（due_index） | 按 NextReviewDue 排序 |
+| 实现 schedule.Queries() | 查询到期词，批量取 N 个 |
+| 预置基础词（首次启动时插入） | file, command, error, etc. |
 
-## 11. 扩展性考虑（新增）
+**验收**：
 
-- 后续可支持手动添加自定义例句（通过 `add --example "..."` 覆盖提取）。
-- 可支持导入 Anki 卡片时保留原句字段。
+- 能写入/读取词条
+- 查询到期词按时间排序
+- 预置词熟练度 0.6
 
----
+### 阶段 4：LLM 客户端（2 天）
 
-## 12. 风险与缓解（新增风险）
+**目标**：支持 Ollama/OpenAI/DeepSeek，可 fallback
 
-| 风险 | 缓解措施 |
-| ------ | ---------- |
-| 例句提取可能截取不完整（如跨行） | 预处理时合并换行为空格，按 `.` `?` `!` 分割；若未找到句子，则截取前后 50 个字符作为上下文。 |
-| 同一单词多次出现，例句重复 | 用句子内容的哈希去重，保留最多 5 个不同例句。 |
-| LLM 仅返回释义可能不够精确 | 可允许用户手动编辑释义（通过 `edit` 命令后续实现）。 |
+| 任务 | 产出 |
+| ------ | ------ |
+| 定义 LLMClient 接口 | ExplainBatch, Ping |
+| 实现 openAICompatibleClient（共享底层） | HTTP 请求/响应 |
+| 实现 OpenAIClient（语义包装） | 调用底层 |
+| 实现 DeepSeekClient（语义包装） | 调用底层 |
+| 实现 OllamaClient | 调用 /api/generate |
+| 实现 factory.NewClient() | 按 providers 顺序 fallback |
+| 实现 Ping 健康检查 | 连接测试 |
 
----
+**验收**：
 
-## 13. 测试策略（调整）
+- `providers = ["ollama", "openai"]` 时，Ollama 不可用自动切 OpenAI
+- 每个 Client 的 Ping 能正确反映服务状态
+- 环境变量可覆盖 API Key（不写入配置文件）
 
-- 单元测试：新增 `sentence.go` 的例句提取逻辑。
-- 集成测试：用真实报错文本测试 `add`，检查例句是否来自原文。
+### 阶段 5：提取器（1.5 天）
 
----
+**目标**：从文本中提取候选词 + 截取例句
 
-## 14. 文档（更新说明）
+| 任务 | 产出 |
+| ------ | ------ |
+| 实现分词（按空白+标点） | internal/extractor/extract.go |
+| 实现去噪（数字/符号/单字母） | 纯数字过滤 |
+| 实现句子截取 | 定位单词所在句子 |
+| 实现文本拆分（超长处理） | 按句子边界拆分为片段 |
 
-- 在 README 中强调“例句来自您的真实输入，不是 AI 生成”，突出产品优势。
+**验收**：
 
----
+- `"Error: cannot find symbol"` → `["error", "cannot", "find", "symbol"]`
+- 每个候选词能正确截取所在句子
+- 超长文本（3000+ 字符）自动拆分
 
-## 15. 交付物（不变）
+### 阶段 6：`add` 命令（2 天）
 
-- 源代码(github仓库)
-- 多平台二进制
-- 一键安装和配置脚本
+**目标**：完整串联：输入 → 提取 → LLM → 存储 → 输出
 
----
+| 任务 | 产出 |
+| ------ | ------ |
+| 实现 cmd/add.go 主体流程 | 完整 pipeline |
+| 集成 extractor | 提取候选词 |
+| 集成 storage（查询已有词） | 过滤出真正新词 |
+| 集成 llm（ExplainBatch） | 批量获取释义 |
+| 集成 storage（写入） | 保存新词 |
+| 集成 output 展示 | 高亮 + 列表 |
+
+**验收**：
+
+- `termhelper add "Error: cannot find symbol"` 能完整跑通
+- 终端显示高亮文本 + 新词释义列表
+- 词库中正确写入新词
+
+### 阶段 7：`test` 命令（2 天）
+
+**目标**：间隔重复测试
+
+| 任务 | 产出 |
+| ------ | ------ |
+| 实现 proficiency 更新逻辑 | 答对 +0.12，答错 -0.10 |
+| 实现 nextInterval 计算 | 1~30 天 |
+| 实现 quiz 出题逻辑 | 正确 + 3 干扰项 |
+| 实现交互循环 | 选择 → 反馈 → 下一题 |
+| 集成 output 展示（彩色） | 正确绿色，错误红色 |
+
+**验收**：
+
+- `termhelper test` 能取出到期词
+- 测试后熟练度正确更新
+- 下次复习时间正确计算
+
+### 阶段 8：`import` + 其他命令（2 天）
+
+**目标**：批量导入 + 辅助命令
+
+| 任务 | 产出 |
+| ------ | ------ |
+| 实现 import 解析器 | 自动检测格式（词 / 词+释义 / 词+释义+例句） |
+| 实现 llm.ImportBatch | 转换用户输入为结构化词条 |
+| 实现 import 存储 | 写入词库 |
+| 实现 list 命令 | 列出词库（按熟练度排序） |
+| 实现 stats 命令 | 统计总数/熟练度分布/到期数 |
+
+**验收**：
+
+- `termhelper import -f words.txt` 能批量导入
+- `list` 显示所有词，`stats` 显示统计
+
+### 阶段 9：打磨与发布（1 天）
+
+**目标**：稳定可用，方便分发
+
+| 任务 | 产出 |
+| ------ | ------ |
+| 错误处理完善 | 所有 error 有友好提示 |
+| 帮助文档 | README, USAGE |
+| 交叉编译 | Linux/macOS/Windows |
+| GitHub Release | 二进制 + 安装脚本 |
+
+**验收**：用户在 Linux 上 `curl ... | bash` 即可安装使用
+
+## 四、里程碑
+
+| 里程碑 | 时间 | 交付物 |
+| -------- | ------ | -------- |
+| M1 | 第 3 天 | 骨架 + 配置 + 日志，能生成配置文件和日志 |
+| M2 | 第 7 天 | 存储 + LLM，能读写词库、调用大模型 |
+| M3 | 第 10 天 | `add` 命令完整可用 |
+| M4 | 第 13 天 | `test` 命令完整可用 |
+| M5 | 第 15 天 | `import` + 辅助命令 |
+| M6 | 第 16 天 | v0.1.0 发布 |
+
+## 五、设计原则（贯穿全程）
+
+1. **KISS**：能合并的不拆分，能显式的不隐式
+2. **机制透明**：配置可读，日志详细，错误直接
+3. **零魔法**：拒绝过度封装，拒绝黑盒抽象
+4. **用户即维护者**：每个用户都能打开 config.toml 看懂并修改
+
+## 六、建议的下一步
+
+1. **立即开始阶段 0**：初始化项目，建立骨架
+2. **阶段 1+2 可以并行**：配置和日志互不依赖
+3. **阶段 3 是核心基石**：存储层稳定后再开发上层

@@ -1,14 +1,18 @@
-package models
+package config
 
-import "log/slog"
+import (
+	"log/slog"
+
+	"github.com/IridiumNan/termhelper/internal/models"
+)
 
 type Config struct {
-	Providers []string       `mapstructure:"providers"`
-	DeepSeek  DeepSeekConfig `mapstructure:"deepseek"`
-	OpenAI    OpenAIConfig   `mapstructure:"openai"`
-	Ollama    OllamaConfig   `mapstructure:"ollama"`
-	Test      TestConfig     `mapstructure:"test"`
-	Logging   LoggingConfig  `mapstructure:"logging"`
+	Providers []models.ModelName `mapstructure:"providers"`
+	DeepSeek  DeepSeekConfig     `mapstructure:"deepseek"`
+	OpenAI    OpenAIConfig       `mapstructure:"openai"`
+	Ollama    OllamaConfig       `mapstructure:"ollama"`
+	Test      TestConfig         `mapstructure:"test"`
+	Logging   LoggingConfig      `mapstructure:"logging"`
 }
 
 type DeepSeekConfig struct {

@@ -1,14 +1,23 @@
 /*
 Copyright © 2026 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
 import (
 	"fmt"
+	"io"
+	"os"
+	"strings"
 
+	"github.com/IridiumNan/termhelper/internal/extractor"
+	"github.com/IridiumNan/termhelper/pkg"
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
+
+const emptyStr = ""
+
+var fileFlag string
 
 // addCmd represents the add command
 var addCmd = &cobra.Command{
@@ -21,12 +30,31 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("add called")
+		input, err := readInput(args)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "fail to read input: %v\n", err)
+		}
+
+		if pkg.IsEmptyStr(input) {
+			fmt.Fprintln(os.Stderr, "error: there is no any text")
+			// TODO: print the usage
+			os.Exit(1)
+		}
+
+		fmt.Printf("receive the input: %s\n", input)
+
+		allTokens := extractor.ExtractTokens(input)
+
+		fmt.Println(color.RedString("all toekns"))
+		for idx := range allTokens {
+			fmt.Println(idx, " ", allTokens[idx])
+		}
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(addCmd)
+	addCmd.Flags().StringVarP(&fileFlag, "file", "f", "", "从文本中读取文件")
 
 	// Here you will define your flags and configuration settings.
 
@@ -37,4 +65,41 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// addCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+func readInput(args []string) (string, error) {
+	fmt.Println("fileFlag -> ", fileFlag)
+	if !pkg.IsEmptyStr(fileFlag) {
+		data, err := os.ReadFile(fileFlag)
+		if err != nil {
+			return "", fmt.Errorf("fail to read file: %w", err)
+		}
+
+		return string(data), nil
+
+	}
+
+	if len(args) > 0 {
+		return strings.Join(args, ""), nil
+	}
+
+	return readStdin()
+}
+
+func readStdin() (string, error) {
+	stat, err := os.Stdin.Stat()
+	if err != nil {
+		return emptyStr, err
+	}
+
+	if (stat.Mode() & os.ModeCharDevice) != 0 {
+		return emptyStr, nil
+	}
+
+	data, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		return emptyStr, fmt.Errorf("fail to read std in: %w", err)
+	}
+
+	return string(data), nil
 }
