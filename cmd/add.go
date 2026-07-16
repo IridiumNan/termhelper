@@ -4,12 +4,17 @@ Copyright © 2026 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
 	"strings"
+	"time"
 
+	"github.com/IridiumNan/termhelper/internal/config"
 	"github.com/IridiumNan/termhelper/internal/extractor"
+	"github.com/IridiumNan/termhelper/internal/llm"
+	"github.com/IridiumNan/termhelper/internal/models"
 	"github.com/IridiumNan/termhelper/pkg"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -43,12 +48,52 @@ to quickly create a Cobra application.`,
 
 		fmt.Printf("receive the input: %s\n", input)
 
-		allTokens := extractor.ExtractTokens(input)
+		// allTokens := extractor.ExtractTokens(input)
+		//
+		// fmt.Println(color.RedString("all toekns"))
+		// for idx := range allTokens {
+		// 	fmt.Println(idx, " ", allTokens[idx])
+		// }
 
-		fmt.Println(color.RedString("all toekns"))
-		for idx := range allTokens {
-			fmt.Println(idx, " ", allTokens[idx])
+		client, err := llm.NextProvider()
+		for config.HasNextProvider() {
+			if err == nil {
+				break
+			}
+			client, err = llm.NextProvider()
 		}
+
+		if err != nil {
+			fmt.Println("have try all available providers but all fail, check your network or api key")
+
+			return
+		}
+		chunker := extractor.NewChunker(input, 5, 3000)
+		allRequests := make([]*models.LLMRequest, 0)
+		for {
+
+			chunk := chunker.NextChunk()
+
+			if chunk == nil {
+				break
+			}
+
+			fmt.Println(color.RedString("text"))
+			fmt.Println(chunk.Context)
+			fmt.Println(color.RedString("word"))
+			fmt.Println(chunk.Word)
+
+			allRequests = append(allRequests, chunk.ChunkToRequest())
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+		defer cancel()
+
+		results, err := client.ExplainBatch(ctx, allRequests)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		fmt.Println(results)
 	},
 }
 

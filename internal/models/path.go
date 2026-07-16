@@ -31,7 +31,7 @@ func GetLogFilePath() string {
 }
 
 func GetConfigRawName() string {
-	return configFileType
+	return configFileRawName
 }
 
 func GetConfigType() string {

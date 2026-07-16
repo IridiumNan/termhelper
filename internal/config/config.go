@@ -32,16 +32,21 @@ func LoadConfig() error {
 		}
 		fmt.Println("config file " + models.GetConfigFilePath() + " not found, use the default one")
 		fmt.Println("you can edit it -> " + models.GetConfigFilePath())
+
 	}
 
 	viper.SetConfigName(models.GetConfigRawName())
 	viper.SetConfigType(models.GetConfigType())
 	viper.AddConfigPath(models.GetConfigDirPath())
 
-	setDefaults()
-
 	viper.AutomaticEnv()
 	viper.SetEnvPrefix("TERMHELPER")
+
+	setDefaults()
+
+	if err := viper.ReadInConfig(); err != nil {
+		return pkg.ReportErrorInputErr(funcName+" read config", err)
+	}
 
 	if err := viper.Unmarshal(&globalConfig); err != nil {
 		return pkg.ReportErrorInputErr(funcName+"Unmarshal file to globalConfig", err)
@@ -63,8 +68,8 @@ func setDefaults() {
 	viper.SetDefault("ollama.model", "qwen3.5:4b")
 	viper.SetDefault("ollama.options.temperature", 0.1)
 	viper.SetDefault("ollama.options.top_p", 0.9)
-	viper.SetDefault("ollama.options.num_predict", 512)
-	viper.SetDefault("ollama.options.num_ctx", 4096)
+	viper.SetDefault("ollama.options.num_predict", 4096)
+	viper.SetDefault("ollama.options.num_ctx", 8192)
 
 	viper.SetDefault("test.batch_size", 30)
 	viper.SetDefault("test.daily_limit", 100)
@@ -93,4 +98,8 @@ func NextProviderStr() (models.ModelName, error) {
 	currentProviderIdx = currentProviderIdx + 1
 
 	return globalConfig.Providers[currentProviderIdx-1], nil
+}
+
+func HasNextProvider() bool {
+	return currentProviderIdx <= maxProviderIdx
 }

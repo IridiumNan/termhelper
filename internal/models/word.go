@@ -2,7 +2,7 @@ package models
 
 type Word struct {
 	Word       string    `json:"word"`
-	Definition []string  `json:"definition"`
+	Definition string    `json:"definition"`
 	Examples   []Example `json:"examples"`
 }
 

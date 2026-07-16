@@ -26,10 +26,10 @@ func newOpenAICompatibleClient(apiKey string, model models.ModelName, baseURL st
 	}
 }
 
-func (client *openAICompatibleClient) explainBatch(ctx context.Context, request []models.LLMRequest) (models.LLMResponse, error) {
+func (client *openAICompatibleClient) explainBatch(ctx context.Context, request []*models.LLMRequest) ([]models.LLMExplainResults, error) {
 	// TODO:
-
-	return
+	//
+	return nil, nil
 }
 
 func (client *openAICompatibleClient) ping(ctx context.Context) error {

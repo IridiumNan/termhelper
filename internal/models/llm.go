@@ -1,11 +1,20 @@
 package models
 
+const (
+	EmptyPrompt = ""
+)
+
 type LLMRequest struct {
-	Wrod    string `json:"word"`
-	Context string `json:"context"`
+	Word    []string `json:"word"`
+	Context string   `json:"context"`
 }
 
-type LLMResponse struct {
-	Word       string   `json:"word"`
-	Definition []string `json:"definition"`
+type LLMExplainResponse struct {
+	Word                string `json:"word"`
+	SimpleDefinition    string `json:"simple_definition"`
+	DetailedExplanation string `json:"detailed_explanation"`
+}
+
+type LLMExplainResults struct {
+	Results []LLMExplainResponse `json:"results"`
 }

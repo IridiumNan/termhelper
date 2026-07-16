@@ -57,3 +57,8 @@ type LoggingConfig struct {
 	ConsoleLevel slog.Level `mapstructure:"console_level"`
 	FileLevel    slog.Level `mapstructure:"file_level"`
 }
+
+type LLMConfig struct {
+	MaxWordsPerChunk uint16 `mapstructure:"max_words_per_chunk"`
+	MaxChunkChars    uint16 `mapstructure:"max_chunk_chars"`
+}
