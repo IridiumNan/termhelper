@@ -84,11 +84,20 @@ type WordEntry struct {
 
 完整数据流
 
-rawText 原始文本 ->
-经过chunker和 providers 进行切割， 获取到Chunk ->
-发送Chunk给大模型 ->
-大模型返回内容 ->
-更新Chunker当中的allWords ->
-所有内容处理完毕， 遍历allWords ->
-使用将输出保存在 output_path 目录的新文件下， 并自动使用less打开->
+rawText 原始文本
+经过chunker和 providers 进行切割， 获取到Chunk
+发送Chunk给大模型
+大模型返回内容
+更新Chunker当中的allWords
+所有内容处理完毕， 遍历allWords
+使用将输出保存在 output_path 目录的新文件下， 并自动使用less打开
 遍历allWords之后将所有的数据刷入的词库当中
+
+## 实现细节
+
+对于rawText, 先进行流式切割， 达到 maxWordCOunt / 2 的单词个数或者 maxCharCount之后就停止
+然后一直截断到下一个语义的分割点， 检查这个Chunk, 如果单词个数超过限制则进行递归分割， 保证单词的个数和文本的长度都符合预期
+
+默认的文本保存方式： 在output_path 里面创建带有时间戳和创建编号的文件， 然后提供接口查询和查看。
+
+在日常的add命令执行的时候， 自动使用less打开当前创建的新文件， 并将latest指向最新的文件
