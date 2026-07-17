@@ -82,7 +82,7 @@ type WordEntry struct {
 }
 ```
 
-完整数据流
+`add` 命令完整数据流
 
 rawText 原始文本
 经过chunker和 providers 进行切割， 获取到Chunk
@@ -101,3 +101,5 @@ rawText 原始文本
 默认的文本保存方式： 在output_path 里面创建带有时间戳和创建编号的文件， 然后提供接口查询和查看。
 
 在日常的add命令执行的时候， 自动使用less打开当前创建的新文件， 并将latest指向最新的文件
+
+数据库采用 storm 这个基于 BoltDB的框架实现， 具体的[文档](https://pkg.go.dev/github.com/gofsd/thunderstorm#section-readme)

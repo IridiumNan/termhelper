@@ -2,6 +2,7 @@ package models
 
 import (
 	_ "embed"
+	"encoding/json"
 )
 
 type Prompt struct {
@@ -11,6 +12,15 @@ type Prompt struct {
 	Example string   `json:"example"`
 	Words   []string `json:"words"`
 	Context string   `json:"context"`
+}
+
+func (prompt *Prompt) Str() (string, error) {
+	promptStr, err := json.Marshal(prompt)
+	if err != nil {
+		return EmptyStr, err
+	}
+
+	return string(promptStr), nil
 }
 
 const (

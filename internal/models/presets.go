@@ -8,14 +8,17 @@ import (
 type ModelName string
 
 const (
-	AppName                     = "termhelper"
-	logFileName                 = "log.txt"
-	configFileRawName           = "config"
-	configFileType              = "toml"
-	dataFileName                = "words.db"
+	EmptyStr          string    = ""
+	AppName           string    = "termhelper"
+	logFileName       string    = "log.txt"
+	configFileRawName string    = "config"
+	configFileType    string    = "toml"
+	dataFileName      string    = "words.db"
 	OllamaClientStr   ModelName = "ollama"
 	OpenAIClientStr   ModelName = "openai"
 	DeepSeekClientStr ModelName = "deepseek"
+
+	InitProficiency float32 = 0.1
 )
 
 var (

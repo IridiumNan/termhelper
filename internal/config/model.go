@@ -7,12 +7,17 @@ import (
 )
 
 type Config struct {
-	Providers []models.ModelName `mapstructure:"providers"`
-	DeepSeek  DeepSeekConfig     `mapstructure:"deepseek"`
-	OpenAI    OpenAIConfig       `mapstructure:"openai"`
-	Ollama    OllamaConfig       `mapstructure:"ollama"`
-	Test      TestConfig         `mapstructure:"test"`
-	Logging   LoggingConfig      `mapstructure:"logging"`
+	Providers    []models.ModelName `mapstructure:"providers"`
+	DeepSeek     DeepSeekConfig     `mapstructure:"deepseek"`
+	OpenAI       OpenAIConfig       `mapstructure:"openai"`
+	Ollama       OllamaConfig       `mapstructure:"ollama"`
+	Test         TestConfig         `mapstructure:"test"`
+	Logging      LoggingConfig      `mapstructure:"logging"`
+	WordProvider WordProvider       `mapstructure:"word_provider"`
+}
+
+type WordProvider struct {
+	DisabledWords []string `mapstructure:"disabled_words"`
 }
 
 type DeepSeekConfig struct {

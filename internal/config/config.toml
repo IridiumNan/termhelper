@@ -77,3 +77,15 @@ max_interval_days = 30
 console_level = 0
 # 文件日志级别（默认 debug）
 file_level = -4
+
+# ========================================
+# 自动跳过的常见词
+# ========================================
+[word_provider]
+disabled_words = [
+    "hello",
+    "yes",
+    "the",
+    "no",
+    "of"
+]

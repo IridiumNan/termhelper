@@ -3,6 +3,7 @@ module github.com/IridiumNan/termhelper
 go 1.26.5
 
 require (
+	github.com/asdine/storm/v3 v3.2.1 // indirect
 	github.com/boltdb/bolt v1.3.1 // indirect
 	github.com/fatih/color v1.19.0 // indirect
 	github.com/fsnotify/fsnotify v1.10.1 // indirect

@@ -13,11 +13,20 @@ import (
 //go:embed config.toml
 var defaultConfigTemplate string
 
-const maxProviderIdx = 2
+const (
+	maxProviderIdx = 2
+)
 
 var (
-	globalConfig       Config
-	currentProviderIdx int = 0
+	globalConfig         Config
+	currentProviderIdx   int = 0
+	defaultDisabledWords     = []string{
+		"hello",
+		"yes",
+		"the",
+		"no",
+		"of",
+	}
 )
 
 func LoadConfig() error {
@@ -81,6 +90,8 @@ func setDefaults() {
 
 	viper.SetDefault("logging.console_level", 0)
 	viper.SetDefault("logging.file_level", -4)
+
+	viper.SetDefault("word_provider", defaultDisabledWords)
 }
 
 func PrintConfig() {
