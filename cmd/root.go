@@ -64,14 +64,29 @@ func initDataDir() error {
 		return pkg.ReportErrorInputErr("initDataPath", err)
 	}
 
-	fmt.Println("data file path -> ", dataPath)
+	filePath := models.GetDataFilePath()
+
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		_, err = os.Create(filePath)
+		if err != nil {
+			return pkg.ReportErrorInputErr("initDataDir", err)
+		}
+		output.File.Info("data file not found create a new one", "path", filePath)
+	}
 
 	return nil
 }
 
 func initConfig() error {
 	funcName := "initConfig"
-	err := config.LoadConfig()
+
+	output.InitConsoleLogger(config.GetGlobalConfig().Logging.ConsoleLevel)
+	err := output.InitFileLogger(config.GetGlobalConfig().Logging.FileLevel)
+	if err != nil {
+		return pkg.ReportErrorInputErr(funcName+" init file logger", err)
+	}
+
+	err = config.LoadConfig()
 	if err != nil {
 		return pkg.ReportErrorInputErr(funcName+" Load config", err)
 	}
@@ -79,17 +94,6 @@ func initConfig() error {
 	if err := initDataDir(); err != nil {
 		return pkg.ReportErrorInputErr(funcName, err)
 	}
-
-	output.InitConsoleLogger(config.GetGlobalConfig().Logging.ConsoleLevel)
-	err = output.InitFileLogger(config.GetGlobalConfig().Logging.FileLevel)
-	if err != nil {
-		return pkg.ReportErrorInputErr(funcName+" init file logger", err)
-	}
-
-	fmt.Println(output.RenderWordByProficiency("这是个新词", 0.1))
-	fmt.Println(output.RenderWordByProficiency("这是正在学习的词", 0.4))
-	fmt.Println(output.RenderWordByProficiency("这是熟悉的词", 0.6))
-	fmt.Println(output.RenderWordByProficiency("这是基本掌握的词", 0.9))
 
 	return nil
 }

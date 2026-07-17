@@ -18,7 +18,7 @@ const (
 	OpenAIClientStr   ModelName = "openai"
 	DeepSeekClientStr ModelName = "deepseek"
 
-	InitProficiency float32 = 0.1
+	InitProficiency float32 = 0.0
 )
 
 var (

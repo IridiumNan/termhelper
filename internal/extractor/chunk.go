@@ -3,6 +3,7 @@ package extractor
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/IridiumNan/termhelper/internal/config"
 	"github.com/IridiumNan/termhelper/internal/models"
@@ -19,25 +20,13 @@ const (
 	notFoundIdx = -1
 )
 
-type Chunk struct {
-	Words   []string
-	Context string
-}
-
-type WordStore struct {
-	entries   []*models.WordEntry
-	indexMap  map[string]int
-	isNewMap  map[string]bool
-	newIndics []int
-}
-
 type Chunker struct {
 	rawText string
 
 	maxWordCount int
 	maxCharCount int
 
-	allWords WordStore
+	allWords models.WordStore
 
 	currPos      int
 	contextStart int
@@ -45,44 +34,78 @@ type Chunker struct {
 	providers []WordProvider
 
 	currChunkPos int
-	chunkCache   []*Chunk
+	chunkCache   []*models.Chunk
+}
+
+func (c *Chunker) UpdateWords(response *models.LLMExplainResults) {
+	for i := range response.Results {
+		c.updateSingleWord(&response.Results[i])
+	}
+}
+
+func (c *Chunker) updateSingleWord(word *models.WordResponse) {
+	idx := c.allWords.IndexMap[word.Word]
+
+	if idx >= len(c.allWords.Entries) {
+		return
+	}
+
+	c.allWords.Entries[idx].SimpleDefinition = word.SimpleDefinition
+	c.allWords.Entries[idx].DetailedExplanation = word.DetailedExplanation
+
+	c.allWords.Entries[idx].NextReviewTime = time.Now().Unix()
+	c.allWords.Entries[idx].UpdateReviewTime()
+}
+
+func (c *Chunker) AllWordEntries() []*models.WordEntry {
+	var wordEntries []*models.WordEntry
+
+	for _, word := range c.allWords.Entries {
+		if word.Proficiency > 0.9 {
+			continue
+		}
+
+		wordEntries = append(wordEntries, word)
+	}
+
+	return wordEntries
 }
 
 func (c *Chunker) getCurrNewWords() (words []string) {
 	words = make([]string, 0)
 
-	for _, i := range c.allWords.newIndics {
-		words = append(words, c.allWords.entries[i].Word)
+	for _, i := range c.allWords.NewInDices {
+		words = append(words, c.allWords.Entries[i].Word)
 	}
 
 	return
 }
 
 func (c *Chunker) pushNewWord(word *models.WordEntry) {
-	if _, ok := c.allWords.indexMap[word.Word]; ok {
+	if _, ok := c.allWords.IndexMap[word.Word]; ok {
 		return
 	}
 
-	c.allWords.entries = append(c.allWords.entries, word)
-	c.allWords.indexMap[word.Word] = len(c.allWords.entries) - 1
-	c.allWords.isNewMap[word.Word] = true
-	c.allWords.newIndics = append(c.allWords.newIndics, c.allWords.indexMap[word.Word])
+	c.allWords.Entries = append(c.allWords.Entries, word)
+	c.allWords.IndexMap[word.Word] = len(c.allWords.Entries) - 1
+	c.allWords.IsNewMap[word.Word] = true
+	c.allWords.NewInDices = append(c.allWords.NewInDices, c.allWords.IndexMap[word.Word])
 }
 
 func (c *Chunker) pushExistWord(word *models.WordEntry) {
-	if _, ok := c.allWords.indexMap[word.Word]; ok {
+	if _, ok := c.allWords.IndexMap[word.Word]; ok {
 		return
 	}
 
-	c.allWords.entries = append(c.allWords.entries, word)
-	c.allWords.indexMap[word.Word] = len(c.allWords.entries) - 1
-	c.allWords.isNewMap[word.Word] = false
+	c.allWords.Entries = append(c.allWords.Entries, word)
+	c.allWords.IndexMap[word.Word] = len(c.allWords.Entries) - 1
+	c.allWords.IsNewMap[word.Word] = false
 }
 
 func (c *Chunker) pushWord(word string) {
 	cleanWord := strings.Trim(strings.ToLower(word), ".,!?;:()\"'")
 	// 如果去除后为空，则忽略（如全是标点）
-	if cleanWord == "" {
+	if cleanWord == "" || len(cleanWord) < 2 {
 		return
 	}
 
@@ -116,11 +139,11 @@ func NewChunker(text string) *Chunker {
 		maxWordCount: defaultMaxWords,
 		maxCharCount: defaultMaxChars,
 
-		allWords: WordStore{
-			entries:   []*models.WordEntry{},
-			indexMap:  map[string]int{},
-			isNewMap:  map[string]bool{},
-			newIndics: []int{},
+		allWords: models.WordStore{
+			Entries:    []*models.WordEntry{},
+			IndexMap:   map[string]int{},
+			IsNewMap:   map[string]bool{},
+			NewInDices: []int{},
 		},
 
 		currPos:      0,
@@ -132,32 +155,39 @@ func NewChunker(text string) *Chunker {
 			newDefaultProvider(),
 		},
 		currChunkPos: 0,
-		chunkCache:   []*Chunk{},
+		chunkCache:   []*models.Chunk{},
 	}
 }
 
 func (c *Chunker) HasNext() bool {
-	return c.currPos < len(c.rawText)-1 || c.cacheCount() > 0
+	return c.currPos < len(c.rawText)-1
 }
 
 func (c *Chunker) hasCache() bool {
-	return c.cacheCount() > 0
+	return c.CacheCount() > 0
 }
 
-func (c *Chunker) cacheCount() int {
-	return len(c.chunkCache) - c.currChunkPos - 1
+func (c *Chunker) CacheCount() int {
+	return len(c.chunkCache) - c.currChunkPos
 }
 
-func (c *Chunker) NextChunk() (chunk *Chunk, hasNext bool) {
-	if !c.HasNext() {
-		return nil, false
-	}
-
+func (c *Chunker) NextChunk() (chunk *models.Chunk, hasNext bool) {
 	if !c.hasCache() {
 		c.makeCache()
 	}
+
+	if c.CacheCount() == 0 {
+		return nil, false
+	}
+
+	hasNext = c.hasCache()
+
+	fmt.Println("cache length: ", len(c.chunkCache))
+	fmt.Println("cache count: ", c.CacheCount())
+	chunk = c.chunkCache[c.currChunkPos]
 	c.currChunkPos++
-	return c.chunkCache[c.currChunkPos-1], c.HasNext()
+
+	return
 }
 
 func isGap(r rune) bool {
@@ -215,83 +245,11 @@ func getNextWordWithMark(text string, start int, end int) (wordStart int, wordEn
 	return
 }
 
-//	func (c *Chunker) makeCache() {
-//		c.contextStart = c.currPos
-//		fmt.Printf("[MAKE] start: currPos=%d, contextStart=%d, textLen=%d\n", c.currPos, c.contextStart, len(c.rawText))
-//
-//		for c.HasNext() && c.cacheCount() < defaultCacheCount {
-//			fmt.Printf("[MAKE] outer loop: currPos=%d, cacheCount=%d, newIndics len=%d\n",
-//				c.currPos, c.cacheCount(), len(c.allWords.newIndics))
-//
-//			// ---- 第一个内层循环 ----
-//			loop1 := 0
-//			for c.HasNext() && len(c.allWords.newIndics) < (c.maxWordCount/2) && c.currPos-c.contextStart < c.maxCharCount {
-//				loop1++
-//				fmt.Printf("[LOOP1] iter=%d, currPos=%d, newIndics=%d\n", loop1, c.currPos, len(c.allWords.newIndics))
-//				wordStart, wordEnd, found := getNextWordWithMark(c.rawText, c.currPos, len(c.rawText))
-//				fmt.Printf("[LOOP1] getNextWord -> start=%d end=%d found=%v\n", wordStart, wordEnd, found)
-//				if !found {
-//					fmt.Printf("[LOOP1] !found, currPos %d -> %d, break\n", c.currPos, c.currPos+1)
-//					if c.currPos < len(c.rawText)-1 {
-//						c.currPos++
-//					} else {
-//						return
-//					}
-//					break
-//				}
-//				if c.currPos >= len(c.rawText) {
-//					return
-//				}
-//				word := c.rawText[wordStart:wordEnd]
-//				fmt.Printf("[LOOP1] pushing word %q\n", word)
-//				c.pushWord(word)
-//				c.currPos = wordEnd
-//				fmt.Printf("[LOOP1] new currPos=%d\n", c.currPos)
-//			}
-//			fmt.Printf("[MAKE] after LOOP1: currPos=%d, newIndics=%d\n", c.currPos, len(c.allWords.newIndics))
-//
-//			// ---- 第二个内层循环 ----
-//			loop2 := 0
-//			for c.HasNext() && !isEnd(rune(c.rawText[c.currPos])) {
-//				loop2++
-//				fmt.Printf("[LOOP2] iter=%d, currPos=%d, char=%q\n", loop2, c.currPos, c.rawText[c.currPos])
-//				wordStart, wordEnd, found := getNextWordWithMark(c.rawText, c.currPos, len(c.rawText))
-//				fmt.Printf("[LOOP2] getNextWord -> start=%d end=%d found=%v\n", wordStart, wordEnd, found)
-//				if !found {
-//					fmt.Printf("[LOOP2] !found, currPos %d -> %d, break\n", c.currPos, c.currPos+1)
-//					if c.currPos < len(c.rawText)-1 {
-//						c.currPos++
-//					} else {
-//						return
-//					}
-//					c.currPos++
-//					break
-//				}
-//				word := c.rawText[wordStart:wordEnd]
-//				fmt.Printf("[LOOP2] pushing word %q\n", word)
-//				c.pushWord(word)
-//				c.currPos = wordEnd
-//				fmt.Printf("[LOOP2] new currPos=%d\n", c.currPos)
-//			}
-//			fmt.Printf("[MAKE] after LOOP2: currPos=%d, isEnd? %v\n", c.currPos,
-//				c.HasNext() && isEnd(rune(c.rawText[c.currPos])))
-//
-//			// ---- 生成缓存 ----
-//			newWords := c.getCurrNewWords()
-//			context := c.rawText[c.contextStart:c.currPos]
-//			fmt.Printf("[MAKE] pushCache: contextLen=%d, newWords=%v\n", len(context), newWords)
-//			c.pushCache(context, newWords)
-//			c.allWords.newIndics = []int{}
-//			fmt.Printf("[MAKE] after pushCache: chunkCache len=%d, currChunkPos=%d\n",
-//				len(c.chunkCache), c.currChunkPos)
-//		}
-//		fmt.Printf("[MAKE] exit: currPos=%d, cacheCount=%d\n", c.currPos, c.cacheCount())
-//	}
 func (c *Chunker) makeCache() {
 	c.contextStart = c.currPos
 
-	for c.HasNext() && c.cacheCount() < defaultCacheCount {
-		for c.HasNext() && len(c.allWords.newIndics) < (c.maxWordCount/2) && c.currPos-c.contextStart < c.maxCharCount {
+	for c.HasNext() && c.CacheCount() < defaultCacheCount {
+		for c.HasNext() && len(c.allWords.NewInDices) < (c.maxWordCount/2) && c.currPos-c.contextStart < c.maxCharCount {
 			wordStart, wordEnd, found := getNextWordWithMark(c.rawText, c.currPos, len(c.rawText))
 
 			if !found {
@@ -313,7 +271,7 @@ func (c *Chunker) makeCache() {
 			c.currPos = wordEnd
 		}
 
-		if isEnd(rune(c.rawText[c.currPos])) {
+		if c.currPos < len(c.rawText)-1 && isEnd(rune(c.rawText[c.currPos])) {
 			c.currPos++
 		}
 
@@ -321,7 +279,7 @@ func (c *Chunker) makeCache() {
 
 		c.contextStart = c.currPos
 
-		c.allWords.newIndics = []int{}
+		c.allWords.NewInDices = []int{}
 
 	}
 }
@@ -337,7 +295,7 @@ func (c *Chunker) pushCache(text string, words []string) {
 	// fmt.Println("words: ", color.RedString("%v", words))
 	// fmt.Println("text: ", color.GreenString("%s", text))
 
-	c.chunkCache = append(c.chunkCache, &Chunk{
+	c.chunkCache = append(c.chunkCache, &models.Chunk{
 		Words:   words,
 		Context: text,
 	})

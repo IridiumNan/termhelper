@@ -44,7 +44,7 @@ Its concurrency mechanisms make it easy to write programs that get the most out 
 	fullText := errorText + "\n" + docText
 
 	chunker := NewChunker(fullText)
-	var chunks []*Chunk
+	var chunks []*models.Chunk
 
 	// 收集所有 Chunk
 	for chunker.HasNext() {
@@ -99,20 +99,20 @@ Fatal: out of memory.`
 		rawText:      text,
 		maxWordCount: defaultMaxWords,
 		maxCharCount: defaultMaxChars,
-		allWords: WordStore{
-			entries:   make([]*models.WordEntry, 0),
-			indexMap:  make(map[string]int),
-			isNewMap:  make(map[string]bool),
-			newIndics: make([]int, 0),
+		allWords: models.WordStore{
+			Entries:    make([]*models.WordEntry, 0),
+			IndexMap:   make(map[string]int),
+			IsNewMap:   make(map[string]bool),
+			NewInDices: make([]int, 0),
 		},
 		currPos:      0,
 		contextStart: 0,
 		providers:    []WordProvider{newDefaultProvider()}, // 仅默认，所有词均为新词
 		currChunkPos: 0,
-		chunkCache:   make([]*Chunk, 0),
+		chunkCache:   make([]*models.Chunk, 0),
 	}
 
-	var chunks []*Chunk
+	var chunks []*models.Chunk
 	for chunker.HasNext() {
 		ch, _ := chunker.NextChunk()
 		chunks = append(chunks, ch)

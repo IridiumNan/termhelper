@@ -14,6 +14,17 @@ type Prompt struct {
 	Context string   `json:"context"`
 }
 
+func NewPrompt(words []string, context string) *Prompt {
+	return &Prompt{
+		Role:    promptRole,
+		Task:    promptTask,
+		Format:  promptFormat,
+		Example: promptExample,
+		Words:   words,
+		Context: context,
+	}
+}
+
 func (prompt *Prompt) Str() (string, error) {
 	promptStr, err := json.Marshal(prompt)
 	if err != nil {
@@ -24,14 +35,14 @@ func (prompt *Prompt) Str() (string, error) {
 }
 
 const (
-	PromptRole = `你是一位技术英语导师，专门帮助计算机专业学生理解英文技术文档中的词汇。`
+	promptRole = `你是一位技术英语导师，专门帮助计算机专业学生理解英文技术文档中的词汇。`
 
-	PromptTask = `我会给你一段英文技术文本（可能是报错信息、手册片段或文档），以及一个需要解释的词汇列表。
+	promptTask = `我会给你一段英文技术文本（可能是报错信息、手册片段或文档），以及一个需要解释的词汇列表。
 请针对列表中的每个词，在该技术上下文语境下给出：
 1. 简单释义：1-2 个中文词，如果存在多个常见释义，用中文逗号「，」分隔。
 2. 详细解释：一段中文说明，解释该词在技术语境中的具体含义和作用。`
 
-	PromptFormat = `请严格按照以下 JSON 格式返回，不要添加任何额外文本或说明：
+	promptFormat = `请严格按照以下 JSON 格式返回，不要添加任何额外文本或说明：
 {
   "results": [
     {
@@ -46,7 +57,7 @@ const (
 - 只解释指定的词汇，不要添加其他词汇。
 - 确保 JSON 是有效的，不包含注释或多余逗号。`
 
-	PromptExample = `输入示例：
+	promptExample = `输入示例：
 上下文文本：
 mv: cannot move '/etc/os-release' to './os-release': Permission denied
 词汇列表：["mv", "release", "permission", "denied"]

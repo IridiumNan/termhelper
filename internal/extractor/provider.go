@@ -2,6 +2,7 @@ package extractor
 
 import (
 	"slices"
+	"time"
 
 	"github.com/IridiumNan/termhelper/internal/models"
 )
@@ -27,6 +28,7 @@ func (dp *DisabledProvider) provide(word string) (entry *models.WordEntry, found
 			SimpleDefinition:    models.EmptyStr,
 			DetailedExplanation: models.EmptyStr,
 			Proficiency:         disabledProficiency,
+			NextReviewTime:      time.Now().Unix(),
 		}, true
 	}
 
@@ -48,6 +50,7 @@ func (np *defaultProvider) provide(word string) (entry *models.WordEntry, found 
 		Word:                word,
 		SimpleDefinition:    models.EmptyStr,
 		DetailedExplanation: models.EmptyStr,
-		Proficiency:         0.1,
+		Proficiency:         models.InitProficiency,
+		NextReviewTime:      time.Now().Unix(),
 	}, false
 }

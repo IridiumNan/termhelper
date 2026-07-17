@@ -4,12 +4,17 @@ Copyright © 2026 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
 	"strings"
+	"time"
 
+	"github.com/IridiumNan/termhelper/internal/extractor"
+	"github.com/IridiumNan/termhelper/internal/llm"
 	"github.com/IridiumNan/termhelper/pkg"
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
 
@@ -40,6 +45,44 @@ to quickly create a Cobra application.`,
 		}
 
 		fmt.Printf("receive the input: %s\n", input)
+
+		chunker := extractor.NewChunker(input)
+
+		client, err := llm.NextClient()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Minute)
+
+		defer cancel()
+
+		for {
+			chunk, hasNext := chunker.NextChunk()
+			fmt.Println(chunk)
+			fmt.Println(hasNext)
+			if !hasNext {
+				break
+			}
+			results, err := client.Explain(ctx, chunk)
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+
+			chunker.UpdateWords(results)
+
+			fmt.Println(color.YellowString("%v", results))
+
+		}
+
+		for _, word := range chunker.AllWordEntries() {
+			if word == nil {
+				fmt.Println(color.RedString("*models.WordEntry is nil pointer"))
+			}
+			word.ColorfulPrint()
+		}
 	},
 }
 
