@@ -7,6 +7,8 @@ import (
 
 	"github.com/IridiumNan/termhelper/internal/config"
 	"github.com/IridiumNan/termhelper/internal/models"
+	"github.com/IridiumNan/termhelper/pkg"
+	"github.com/fatih/color"
 )
 
 const (
@@ -16,6 +18,8 @@ const (
 	invalidateBoundary = -1
 
 	disabledProficiency = 1.0
+
+	noDisplayProficiency = 0.9
 
 	notFoundIdx = -1
 )
@@ -43,10 +47,38 @@ func (c *Chunker) UpdateWords(response *models.LLMExplainResults) {
 	}
 }
 
+// appendWordResponse: this func is for LLM response don't use the original word but split it
+func (c *Chunker) appendWordResponse(word *models.WordResponse) {
+	wordEntry := models.WordEntry{
+		Word:                word.Word,
+		SimpleDefinition:    word.SimpleDefinition,
+		DetailedExplanation: word.DetailedExplanation,
+		Proficiency:         models.InitProficiency,
+		NextReviewTime:      time.Now().Unix(),
+	}
+
+	wordEntry.UpdateReviewTime()
+
+	c.allWords.Entries = append(c.allWords.Entries, &wordEntry)
+	c.allWords.IndexMap[word.Word] = len(c.allWords.Entries) - 1
+
+	c.allWords.IsNewMap[word.Word] = true
+}
+
 func (c *Chunker) updateSingleWord(word *models.WordResponse) {
-	idx := c.allWords.IndexMap[word.Word]
+	idx, ok := c.allWords.IndexMap[word.Word]
+
+	// for preserve data, you shound always use the Guard Clauses
+	if !ok {
+		// if the LLM's response is not match the original word, append it as the new word Instead then update the entry
+
+		c.appendWordResponse(word)
+		// We handle this word then return
+		return
+	}
 
 	if idx >= len(c.allWords.Entries) {
+		fmt.Println(color.RedString("out of range word entry: %v", word))
 		return
 	}
 
@@ -61,7 +93,7 @@ func (c *Chunker) AllWordEntries() []*models.WordEntry {
 	var wordEntries []*models.WordEntry
 
 	for _, word := range c.allWords.Entries {
-		if word.Proficiency > 0.9 {
+		if word.Proficiency > noDisplayProficiency || pkg.IsEmptyStr(word.SimpleDefinition) || pkg.IsEmptyStr(word.DetailedExplanation) {
 			continue
 		}
 
@@ -88,7 +120,10 @@ func (c *Chunker) pushNewWord(word *models.WordEntry) {
 
 	c.allWords.Entries = append(c.allWords.Entries, word)
 	c.allWords.IndexMap[word.Word] = len(c.allWords.Entries) - 1
+
 	c.allWords.IsNewMap[word.Word] = true
+
+	// push to the NewInDices
 	c.allWords.NewInDices = append(c.allWords.NewInDices, c.allWords.IndexMap[word.Word])
 }
 
@@ -104,7 +139,7 @@ func (c *Chunker) pushExistWord(word *models.WordEntry) {
 
 func (c *Chunker) pushWord(word string) {
 	cleanWord := strings.Trim(strings.ToLower(word), ".,!?;:()\"'")
-	// 如果去除后为空，则忽略（如全是标点）
+	// if it's not word, return
 	if cleanWord == "" || len(cleanWord) < 2 {
 		return
 	}
@@ -182,8 +217,6 @@ func (c *Chunker) NextChunk() (chunk *models.Chunk, hasNext bool) {
 
 	hasNext = c.hasCache()
 
-	fmt.Println("cache length: ", len(c.chunkCache))
-	fmt.Println("cache count: ", c.CacheCount())
 	chunk = c.chunkCache[c.currChunkPos]
 	c.currChunkPos++
 
@@ -198,30 +231,6 @@ func isEnd(r rune) bool {
 	return r == '.' || r == '\n' || r == '?' || r == '!' || r == ';'
 }
 
-// getNextWord : return the idx of wordStart and wordEnd which is last Letter + 1
-//
-//	func getNextWordWithMark(text string, start int, end int) (wordStart int, wordEnd int, found bool) {
-//		curr := start
-//
-//		for curr < end && isGap(rune(text[curr])) {
-//			curr++
-//		}
-//
-//		if curr >= end {
-//			return notFoundIdx, notFoundIdx, false
-//		}
-//
-//		wordStart = curr
-//
-//		for curr < end && !isGap(rune(text[curr])) {
-//			curr++
-//		}
-//
-//		wordEnd = curr
-//		found = true
-//
-//		return
-//	}
 func getNextWordWithMark(text string, start int, end int) (wordStart int, wordEnd int, found bool) {
 	curr := start
 
@@ -254,7 +263,6 @@ func (c *Chunker) makeCache() {
 
 			if !found {
 				c.currPos++
-				// break
 			}
 
 			c.pushWord(c.rawText[wordStart:wordEnd])
@@ -265,7 +273,6 @@ func (c *Chunker) makeCache() {
 			wordStart, wordEnd, found := getNextWordWithMark(c.rawText, c.currPos, len(c.rawText))
 			if !found {
 				c.currPos++
-				// break
 			}
 			c.pushWord(c.rawText[wordStart:wordEnd])
 			c.currPos = wordEnd
@@ -280,6 +287,7 @@ func (c *Chunker) makeCache() {
 		c.contextStart = c.currPos
 
 		c.allWords.NewInDices = []int{}
+		// clear current NewInDices slice
 
 	}
 }
@@ -291,9 +299,6 @@ func (c *Chunker) pushCache(text string, words []string) {
 
 		return
 	}
-	// fmt.Println("chunkCache:")
-	// fmt.Println("words: ", color.RedString("%v", words))
-	// fmt.Println("text: ", color.GreenString("%s", text))
 
 	c.chunkCache = append(c.chunkCache, &models.Chunk{
 		Words:   words,

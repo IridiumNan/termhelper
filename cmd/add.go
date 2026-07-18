@@ -60,8 +60,11 @@ to quickly create a Cobra application.`,
 
 		for {
 			chunk, hasNext := chunker.NextChunk()
-			fmt.Println(chunk)
-			fmt.Println(hasNext)
+
+			// print this for debug
+			// fmt.Println(chunk)
+			// fmt.Println(hasNext)
+
 			if !hasNext {
 				break
 			}
@@ -78,9 +81,9 @@ to quickly create a Cobra application.`,
 		}
 
 		for _, word := range chunker.AllWordEntries() {
-			if word == nil {
-				fmt.Println(color.RedString("*models.WordEntry is nil pointer"))
-			}
+			// if word == nil {
+			// 	fmt.Println(color.RedString("*models.WordEntry is nil pointer"))
+			// }
 			word.ColorfulPrint()
 		}
 	},

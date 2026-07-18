@@ -67,11 +67,6 @@ func (word *WordEntry) ColorfulPrint() {
 	case word.Proficiency < 0.8:
 		displayColor = colorFamiliar
 	}
-
-	fmt.Println("word => ", word.Word)
-	fmt.Println("simple_definition => ", word.SimpleDefinition)
-	fmt.Println("detailed_explanation => ", word.DetailedExplanation)
-
 	fmt.Println(displayColor.Sprint(word.Word))
 	fmt.Println(displayColor.Sprint(word.SimpleDefinition))
 	fmt.Println(displayColor.Sprint(word.DetailedExplanation))
