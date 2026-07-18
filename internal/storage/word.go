@@ -25,7 +25,7 @@ func (d *WordData) PushSingleWordEntryIfNew(word *models.WordEntry) {
 // GetWordEntryByStr : query for a word by wordStr
 func (d *WordData) GetWordEntryByStr(wordStr string) (*models.WordEntry, error) {
 	var word models.WordEntry
-	err := d.db.One(word.FieldWordStr(), wordStr, &word)
+	err := d.db.One(models.FieldWordStr, wordStr, &word)
 	if err != nil {
 		return nil, err
 	}
@@ -39,4 +39,13 @@ func (d *WordData) GetAllWordEntries() ([]*models.WordEntry, error) {
 	err := d.db.All(&words)
 
 	return words, err
+}
+
+func (d *WordData) UpdateAll(words []*models.WordEntry) {
+	for _, word := range words {
+		err := d.db.Update(word)
+		if err != nil {
+			output.File.Error("error when update word entry on database", "error", err)
+		}
+	}
 }

@@ -13,7 +13,6 @@ func GetDataDirPath() string {
 	return filepath.Join(homeDir, dataDirPath, AppName)
 }
 
-// return the whole path with Dir/FileName
 func GetDataFilePath() string {
 	return filepath.Join(GetDataDirPath(), dataFileName)
 }

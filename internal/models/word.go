@@ -18,6 +18,16 @@ const (
 	minMinutes = 60.0
 	factor     = 2.0
 	scale      = 10.0
+
+	correctStep = 0.1
+	wrongStep   = 0.03
+
+	hourSecond = 3600
+
+	FieldWordStr                = "Word"
+	FieldSimpleDefinitionStr    = "SimpleDefinition"
+	FieldDetailedExplanationStr = "DetailedExplanation"
+	FieldNextReviewTimeStr      = "NextReviewTime"
 )
 
 type WordEntry struct {
@@ -31,26 +41,6 @@ type WordEntry struct {
 	NextReviewTime int64 `storm:"index"`
 }
 
-func (w *WordEntry) FieldWordStr() string {
-	return "Word"
-}
-
-func (w *WordEntry) FieldSimpleDefinitionStr() string {
-	return "SimpleDefinition"
-}
-
-func (w *WordEntry) FieldDetailedExplanationStr() string {
-	return "DetailedExplanation"
-}
-
-func (w *WordEntry) FieldProficiencyStr() string {
-	return "Proficiency"
-}
-
-func (w *WordEntry) FieldNextReviewTimeStr() string {
-	return "NextReviewTime"
-}
-
 type WordResponse struct {
 	Word string `json:"word"`
 
@@ -62,15 +52,35 @@ type LLMExplainResults struct {
 	Results []WordResponse `json:"results"`
 }
 
-func (word *WordEntry) NextReviewInterval() time.Duration {
+func (word *WordEntry) UpdateProficiency(correct bool) {
+	if correct {
+		word.Proficiency = word.Proficiency + correctStep
+
+		if word.Proficiency > 1.0 {
+			word.Proficiency = 1.0
+		}
+
+		return
+	}
+
+	word.Proficiency = word.Proficiency - wrongStep
+
+	if word.Proficiency < 0.0 {
+		word.Proficiency = 0.0
+	}
+}
+
+func (word *WordEntry) NextReviewInterval() int64 {
 	ratio := math.Pow(factor, float64(word.Proficiency)*scale)
 	minutes := minMinutes * ratio
 
-	return time.Duration(minutes) * time.Minute
+	result := time.Duration(minutes) * time.Minute
+
+	return int64(result.Seconds())
 }
 
 func (word *WordEntry) UpdateReviewTime() {
-	word.NextReviewTime = word.NextReviewTime + int64(word.NextReviewInterval())
+	word.NextReviewTime = word.NextReviewTime + int64(word.NextReviewInterval()) - hourSecond
 }
 
 func (word *WordEntry) ColorfulPrint() {
@@ -91,6 +101,8 @@ func (word *WordEntry) ColorfulPrint() {
 	fmt.Println(displayColor.Sprint(word.Word))
 	fmt.Println(displayColor.Sprint(word.SimpleDefinition))
 	fmt.Println(word.DetailedExplanation)
+
+	fmt.Printf("word due timestamp; due %d, now %d\n", word.NextReviewTime, time.Now().Unix())
 
 	fmt.Println()
 }
