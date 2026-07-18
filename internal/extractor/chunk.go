@@ -165,6 +165,7 @@ func (c *Chunker) pushWord(word string) {
 	}
 
 	if !found {
+
 		c.pushNewWord(wordEntry)
 		return
 	}
