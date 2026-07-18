@@ -13,6 +13,7 @@ import (
 
 	"github.com/IridiumNan/termhelper/internal/extractor"
 	"github.com/IridiumNan/termhelper/internal/llm"
+	"github.com/IridiumNan/termhelper/internal/storage"
 	"github.com/IridiumNan/termhelper/pkg"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -85,6 +86,18 @@ to quickly create a Cobra application.`,
 			// 	fmt.Println(color.RedString("*models.WordEntry is nil pointer"))
 			// }
 			word.ColorfulPrint()
+		}
+
+		db := storage.GetGlobalWordData()
+		if db == nil {
+			return
+		}
+
+		db.PushAllWordEntriesIfNew(chunker.AllWordEntries())
+
+		err = db.Close()
+		if err != nil {
+			fmt.Println("error when close db", err)
 		}
 	},
 }

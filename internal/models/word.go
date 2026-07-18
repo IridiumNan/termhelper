@@ -31,6 +31,26 @@ type WordEntry struct {
 	NextReviewTime int64 `storm:"index"`
 }
 
+func (w *WordEntry) FieldWordStr() string {
+	return "Word"
+}
+
+func (w *WordEntry) FieldSimpleDefinitionStr() string {
+	return "SimpleDefinition"
+}
+
+func (w *WordEntry) FieldDetailedExplanationStr() string {
+	return "DetailedExplanation"
+}
+
+func (w *WordEntry) FieldProficiencyStr() string {
+	return "Proficiency"
+}
+
+func (w *WordEntry) FieldNextReviewTimeStr() string {
+	return "NextReviewTime"
+}
+
 type WordResponse struct {
 	Word string `json:"word"`
 
@@ -67,9 +87,10 @@ func (word *WordEntry) ColorfulPrint() {
 	case word.Proficiency < 0.8:
 		displayColor = colorFamiliar
 	}
+	// Use the proficiency to decide word and SimpleDefinition color
 	fmt.Println(displayColor.Sprint(word.Word))
 	fmt.Println(displayColor.Sprint(word.SimpleDefinition))
-	fmt.Println(displayColor.Sprint(word.DetailedExplanation))
+	fmt.Println(word.DetailedExplanation)
 
 	fmt.Println()
 }

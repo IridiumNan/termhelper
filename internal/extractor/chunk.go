@@ -41,8 +41,16 @@ type Chunker struct {
 	chunkCache   []*models.Chunk
 }
 
+// UpdateWords : use the LLM Explainations to update new words attributes
 func (c *Chunker) UpdateWords(response *models.LLMExplainResults) {
 	for i := range response.Results {
+
+		// if word exist, skip it
+		if !c.allWords.IsNewMap[response.Results[i].Word] {
+			continue
+		}
+
+		// just update new words
 		c.updateSingleWord(&response.Results[i])
 	}
 }
@@ -65,6 +73,7 @@ func (c *Chunker) appendWordResponse(word *models.WordResponse) {
 	c.allWords.IsNewMap[word.Word] = true
 }
 
+// updateSingleWord: update the word which is new, their Word attribute is not empty and other is unset
 func (c *Chunker) updateSingleWord(word *models.WordResponse) {
 	idx, ok := c.allWords.IndexMap[word.Word]
 
@@ -168,6 +177,7 @@ func NewChunker(text string) *Chunker {
 	fmt.Println(config.GetGlobalConfig().WordProvider.DisabledWords)
 
 	fmt.Println()
+
 	return &Chunker{
 		rawText: text,
 
@@ -185,8 +195,13 @@ func NewChunker(text string) *Chunker {
 		contextStart: 0,
 
 		providers: []WordProvider{
+			// disabled provider return the word entry with hight proficiency to avoid displaying them
 			newDisabledProvider(config.GetGlobalConfig().WordProvider.DisabledWords),
-			// TODO: dicProvider from database
+
+			// dic provider which Get words from dicts
+			newDicProvider(),
+
+			// default provider for new words construct
 			newDefaultProvider(),
 		},
 		currChunkPos: 0,
