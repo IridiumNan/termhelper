@@ -28,6 +28,11 @@ const (
 	FieldSimpleDefinitionStr    = "SimpleDefinition"
 	FieldDetailedExplanationStr = "DetailedExplanation"
 	FieldNextReviewTimeStr      = "NextReviewTime"
+	FieldProficiency            = "Proficiency"
+
+	ProficiencyNew      = 0.2
+	ProficiencyLearning = 0.5
+	ProficiencyFamiliar = 0.8
 )
 
 type WordEntry struct {

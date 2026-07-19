@@ -1,12 +1,12 @@
 /*
 Copyright © 2026 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
 import (
 	"fmt"
 
+	"github.com/IridiumNan/termhelper/internal/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -22,6 +22,16 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("status called")
+
+		status := ""
+
+		db := storage.GetGlobalWordData()
+
+		status += db.GetDueWordsStatus()
+
+		status += db.GetProficiencyStatus()
+
+		fmt.Println(status)
 	},
 }
 
