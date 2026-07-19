@@ -50,7 +50,7 @@ to quickly create a Cobra application.`,
 		// fmt.Printf("receive the input: %s\n", input)
 		chunker := extractor.NewChunker(input)
 
-		client, err := llm.NextClient()
+		client, err := llm.GetClient()
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -78,9 +78,9 @@ to quickly create a Cobra application.`,
 
 			chunker.UpdateWords(results)
 
-			// fmt.Println(color.YellowString("%v", results))
-
 		}
+
+		// FOR TEST PRINT
 		// for _, word := range chunker.AllWordEntries() {
 		// 	// if word == nil {
 		// 	// 	fmt.Println(color.RedString("*models.WordEntry is nil pointer"))

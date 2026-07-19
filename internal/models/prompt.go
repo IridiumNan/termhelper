@@ -34,6 +34,7 @@ func (prompt *Prompt) Str() (string, error) {
 	return string(promptStr), nil
 }
 
+// TODO: extrat this Prompt to config.toml
 const (
 	promptRole = `你是一位技术英语导师，专门帮助计算机专业学生理解英文技术文档中的词汇。`
 
