@@ -13,13 +13,15 @@ import (
 // statusCmd represents the status command
 var statusCmd = &cobra.Command{
 	Use:   "status",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "查看单词学习状态统计",
+	Long: `显示当前单词学习的整体状态概览，包括：
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+  - 待复习单词数量（已到期未复习）
+  - 各熟练度级别的单词分布：
+    新词（New）→ 学习中（Learning）→ 较熟悉（Familiar）→ 已掌握（Master）
+
+帮助你了解当前学习进度和复习压力。`,
+	Example: `  termhelper status`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("status called")
 

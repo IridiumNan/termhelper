@@ -23,13 +23,17 @@ var editorOptions = []string{
 // configCmd represents the config command
 var configCmd = &cobra.Command{
 	Use:   "config",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "编辑配置文件",
+	Long: `使用系统默认编辑器（$EDITOR）打开 TOML 格式的配置文件进行编辑。
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+按优先级依次尝试以下编辑器：vim → vi → nano
+
+配置文件位于 ~/.config/termhelper/config.toml，
+支持配置 LLM 提供商、模型参数、复习策略、日志级别等。
+
+也可通过环境变量覆盖配置：
+  DEEPSEEK_API_KEY、OPENAI_API_KEY、TERMHELPER_*`,
+	Example: `  termhelper config`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("config called")
 

@@ -19,13 +19,19 @@ const defaultWordListLimit = 30
 // listCmd represents the list command
 var listCmd = &cobra.Command{
 	Use:   "list",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "列出待复习的到期单词",
+	Long: `从数据库中查询所有到期（到复习时间）的单词，
+按下次复习时间排序输出到临时文件，并通过 less 分页查看。
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+单词按熟练度着色显示：
+  - 绿色  → 新词（New）
+  - 黄色  → 学习中（Learning）
+  - 青色  → 较熟悉（Familiar）
+
+不传参数时默认列出 30 个单词。`,
+	Example: `  termhelper list
+  termhelper list 50
+  termhelper list 100`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("list called")
 		// db := storage.GetGlobalWordData()

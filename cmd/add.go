@@ -28,13 +28,19 @@ var fileFlag string
 // addCmd represents the add command
 var addCmd = &cobra.Command{
 	Use:   "add",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "解析文本中的英文词汇并获取中文解释",
+	Long: `将传入的英文技术文本（报错信息、文档片段、终端输出等）分块，
+调用 LLM 自动提取其中的技术词汇，并生成中文释义和详细解释。
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+支持三种输入方式：
+  1. 命令行参数直接传入
+  2. 管道（stdin）输入
+  3. -f 标志从文件读取
+
+提取结果会保存到本地数据库，并通过 less 分页显示。`,
+	Example: `  termhelper add "mv: cannot move './os-release': Permission denied"
+  echo "fatal: Not a valid object name" | termhelper add
+  termhelper add -f error.log`,
 	Run: func(cmd *cobra.Command, args []string) {
 		input, err := readInput(args)
 		if err != nil {

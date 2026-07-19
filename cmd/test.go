@@ -17,13 +17,19 @@ const defaultTestWordLimit = 20
 // testCmd represents the test command
 var testCmd = &cobra.Command{
 	Use:   "test",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "进行单词测验",
+	Long: `从到期单词中随机抽取题目进行四选一交互测验。
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+每题显示一个英文单词，给出 4 个中文释义选项（A-D），
+选择正确答案后显示详细解释。
+
+答对增加熟练度，答错降低熟练度，
+结果自动同步到数据库，影响下次复习间隔。
+
+输入 Q 可随时退出测验。`,
+	Example: `  termhelper test
+  termhelper test 20
+  termhelper test 50`,
 
 	// This args not contains the `test` command itself
 	Run: func(cmd *cobra.Command, args []string) {

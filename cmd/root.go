@@ -17,13 +17,20 @@ import (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "termhelper",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
+	Short: "终端英语词汇辅助学习工具",
+	Long: `termhelper 帮助计算机专业学生和技术人员在日常工作中学习英文技术词汇。
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+它从报错信息、技术文档、终端输出等真实文本中提取英文词汇，
+借助 LLM（Ollama / DeepSeek / OpenAI）生成中文释义，
+并通过间隔重复（Spaced Repetition）机制进行复习巩固。
+
+常用命令：
+  termhelper add    解析文本并提取词汇
+  termhelper list   列出待复习的到期单词
+  termhelper test   进行单词测验
+  termhelper status 查看学习状态
+  termhelper config 编辑配置文件
+  termhelper clear  清理临时文件`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
