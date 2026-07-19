@@ -6,8 +6,8 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"os/exec"
 
+	"github.com/IridiumNan/termhelper/internal/models"
 	"github.com/IridiumNan/termhelper/internal/output"
 	"github.com/IridiumNan/termhelper/internal/writer"
 	"github.com/IridiumNan/termhelper/pkg"
@@ -45,7 +45,7 @@ to quickly create a Cobra application.`,
 
 		writer := writer.NewWordWriter()
 
-		file, err := os.CreateTemp("", "list-*.tmp")
+		file, err := os.CreateTemp(models.GetTmpDirPath(), "list-*.tmp")
 
 		defer os.Remove(file.Name())
 
@@ -61,21 +61,18 @@ to quickly create a Cobra application.`,
 
 			return
 		}
+
+		// This may not work => list [num] just list the num limit words
+		// but is reasonable
 		for hasNext {
 			hasNext = writer.WriteDueWords(limit, file)
 		}
 
 		file.Close()
 
-		lessCmd := exec.Command("less", "-R", file.Name())
-
-		lessCmd.Stdin = os.Stdin
-		lessCmd.Stdout = os.Stdout
-		lessCmd.Stderr = os.Stderr
-
-		if err = lessCmd.Run(); err != nil {
+		err = pkg.OpenWithLess(file)
+		if err != nil {
 			output.Console.Error("fail to use less command to open file", "file", file.Name(), "error", err)
-			return
 		}
 
 		fmt.Println("clear the tmp file => ", file.Name())

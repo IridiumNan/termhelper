@@ -45,3 +45,7 @@ func getConfigFullName() string {
 func GetConfigFilePath() string {
 	return filepath.Join(GetConfigDirPath(), getConfigFullName())
 }
+
+func GetTmpDirPath() string {
+	return filepath.Join("/tmp", AppName)
+}

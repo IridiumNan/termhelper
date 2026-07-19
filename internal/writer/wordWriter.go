@@ -42,8 +42,32 @@ func batchFormat(words []*models.WordEntry, currPos int, batchSize int) (nextPos
 	return
 }
 
+func (w *WordWriter) WriteWords(words []*models.WordEntry, dst *os.File) (err error) {
+	if len(words) == 0 {
+		return
+	}
+
+	currPos := 0
+	var out string
+
+	for currPos < len(words)-1 {
+		currPos, out = batchFormat(words, currPos, defaultBatchSize)
+
+		_, err = dst.WriteString(out)
+		if err != nil {
+			output.Console.Error("error when write due words batch to file", "file", dst.Name(), "error", err)
+			output.File.Error("error when write due words batch to file", "file", dst.Name(), "error", err)
+		}
+
+	}
+
+	return
+}
+
 func (w *WordWriter) WriteDueWords(wordLimit int, dst *os.File) (hasNext bool) {
 	words, err := w.wordData.GetWordsSortByDue(wordLimit, w.skipCount)
+
+	w.skipCount += len(words)
 
 	if len(words) == 0 {
 		return false
@@ -72,25 +96,25 @@ func (w *WordWriter) WriteDueWords(wordLimit int, dst *os.File) (hasNext bool) {
 	return
 }
 
-func (w *WordWriter) WriteNextDueWord(dst *os.File) (hasNext bool, err error) {
-	words, err := w.wordData.GetWordsSortByDue(1, w.skipCount)
-
-	if len(words) == 0 {
-		return false, err
-	}
-	if err != nil {
-		output.Console.Error("error when get next due word", "error", err)
-		output.File.Error("error when get next due word", "error", err)
-
-		return false, err
-	}
-
-	_, err = dst.Write([]byte(words[0].FileFormat()))
-	if err != nil {
-		output.Console.Error("error when write next due word", "error", err)
-	}
-
-	w.skipCount++
-
-	return
-}
+// func (w *WordWriter) WriteNextDueWord(dst *os.File) (hasNext bool, err error) {
+// 	words, err := w.wordData.GetWordsSortByDue(1, w.skipCount)
+//
+// 	if len(words) == 0 {
+// 		return false, err
+// 	}
+// 	if err != nil {
+// 		output.Console.Error("error when get next due word", "error", err)
+// 		output.File.Error("error when get next due word", "error", err)
+//
+// 		return false, err
+// 	}
+//
+// 	_, err = dst.Write([]byte(words[0].FileFormat()))
+// 	if err != nil {
+// 		output.Console.Error("error when write next due word", "error", err)
+// 	}
+//
+// 	w.skipCount++
+//
+// 	return
+// }

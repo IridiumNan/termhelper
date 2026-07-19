@@ -54,6 +54,44 @@ func init() {
 		fmt.Println(err)
 		return
 	}
+
+	initOutput()
+
+	if err := initDir(); err != nil {
+		fmt.Println(err)
+		return
+	}
+}
+
+func initOutput() {
+	output.InitConsoleLogger(config.GetGlobalConfig().Logging.ConsoleLevel)
+	err := output.InitFileLogger(config.GetGlobalConfig().Logging.FileLevel)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func initConfig() error {
+	funcName := "initConfig"
+	err := config.LoadConfig()
+	if err != nil {
+		return pkg.ReportErrorInputErr(funcName+" Load config", err)
+	}
+	return nil
+}
+
+func initDir() error {
+	funcName := "initDir"
+
+	if err := initDataDir(); err != nil {
+		return pkg.ReportErrorInputErr(funcName, err)
+	}
+
+	if err := initTmpDir(); err != nil {
+		return pkg.ReportErrorInputErr(funcName, err)
+	}
+
+	return nil
 }
 
 func initDataDir() error {
@@ -75,22 +113,11 @@ func initDataDir() error {
 	return nil
 }
 
-func initConfig() error {
-	funcName := "initConfig"
+func initTmpDir() error {
+	tmpDir := models.GetTmpDirPath()
 
-	output.InitConsoleLogger(config.GetGlobalConfig().Logging.ConsoleLevel)
-	err := output.InitFileLogger(config.GetGlobalConfig().Logging.FileLevel)
-	if err != nil {
-		return pkg.ReportErrorInputErr(funcName+" init file logger", err)
-	}
-
-	err = config.LoadConfig()
-	if err != nil {
-		return pkg.ReportErrorInputErr(funcName+" Load config", err)
-	}
-
-	if err := initDataDir(); err != nil {
-		return pkg.ReportErrorInputErr(funcName, err)
+	if err := os.MkdirAll(tmpDir, 0o755); err != nil {
+		return err
 	}
 
 	return nil

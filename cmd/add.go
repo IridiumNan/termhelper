@@ -13,9 +13,11 @@ import (
 
 	"github.com/IridiumNan/termhelper/internal/extractor"
 	"github.com/IridiumNan/termhelper/internal/llm"
+	"github.com/IridiumNan/termhelper/internal/models"
+	"github.com/IridiumNan/termhelper/internal/output"
 	"github.com/IridiumNan/termhelper/internal/storage"
+	"github.com/IridiumNan/termhelper/internal/writer"
 	"github.com/IridiumNan/termhelper/pkg"
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
 
@@ -45,8 +47,7 @@ to quickly create a Cobra application.`,
 			os.Exit(1)
 		}
 
-		fmt.Printf("receive the input: %s\n", input)
-
+		// fmt.Printf("receive the input: %s\n", input)
 		chunker := extractor.NewChunker(input)
 
 		client, err := llm.NextClient()
@@ -77,16 +78,15 @@ to quickly create a Cobra application.`,
 
 			chunker.UpdateWords(results)
 
-			fmt.Println(color.YellowString("%v", results))
+			// fmt.Println(color.YellowString("%v", results))
 
 		}
-
-		for _, word := range chunker.AllWordEntries() {
-			// if word == nil {
-			// 	fmt.Println(color.RedString("*models.WordEntry is nil pointer"))
-			// }
-			word.ColorfulPrint()
-		}
+		// for _, word := range chunker.AllWordEntries() {
+		// 	// if word == nil {
+		// 	// 	fmt.Println(color.RedString("*models.WordEntry is nil pointer"))
+		// 	// }
+		// 	word.ColorfulPrint()
+		// }
 
 		db := storage.GetGlobalWordData()
 		if db == nil {
@@ -99,6 +99,14 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			fmt.Println("error when close db", err)
 		}
+
+		fileName := writeRawWithOutput(input, chunker.AllWordEntries())
+
+		err = pkg.OpenWithLessByName(fileName)
+		if err != nil {
+			output.Console.Error("fail to open file with less command ", "error", err)
+		}
+		fmt.Println("you can look result later => less -R ", fileName)
 	},
 }
 
@@ -152,4 +160,34 @@ func readStdin() (string, error) {
 	}
 
 	return string(data), nil
+}
+
+func ReplaceRaw(rawText string, words []*models.WordEntry) string {
+	var colorfulText string
+	for _, word := range words {
+		colorfulText = strings.ReplaceAll(rawText, word.Word, output.RenderWordByProficiency(word.Word, word.Proficiency))
+	}
+
+	return colorfulText
+}
+
+func writeRawWithOutput(rawText string, words []*models.WordEntry) (tmpFilePath string) {
+	file, err := os.CreateTemp(models.GetTmpDirPath(), "add-output-*.tmp")
+	if err != nil {
+		output.Console.Error("error when create temp file", "file", file.Name(), "error", err)
+		output.File.Error("error when create temp file", "file", file.Name(), "error", err)
+		return
+	}
+	//
+	// _, err = file.WriteString(ReplaceRaw(rawText, words))
+	// if err != nil {
+	// 	output.Console.Error("error when write rawText to temp file", "file", file.Name())
+	// 	output.File.Error("error when write rawText to temp file", "file", file.Name())
+	// }
+
+	writer := writer.NewWordWriter()
+
+	_ = writer.WriteWords(words, file)
+
+	return file.Name()
 }

@@ -91,15 +91,13 @@ func (c *Chunker) updateSingleWord(word *models.WordResponse) {
 		return
 	}
 
+	fmt.Println("parse word ", word.Word, "...")
+
 	c.allWords.Entries[idx].SimpleDefinition = word.SimpleDefinition
 	c.allWords.Entries[idx].DetailedExplanation = word.DetailedExplanation
 
 	c.allWords.Entries[idx].NextReviewTime = time.Now().Unix()
-	fmt.Println("current time => ", c.allWords.Entries[idx].NextReviewTime)
-
 	c.allWords.Entries[idx].UpdateReviewTime()
-
-	fmt.Println("next review time => ", c.allWords.Entries[idx].NextReviewTime)
 }
 
 func (c *Chunker) AllWordEntries() []*models.WordEntry {
