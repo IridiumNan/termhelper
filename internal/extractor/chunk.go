@@ -91,7 +91,7 @@ func (c *Chunker) updateSingleWord(word *models.WordResponse) {
 		return
 	}
 
-	fmt.Println("parse word ", word.Word, "...")
+	fmt.Println("parsing word =>", word.Word)
 
 	c.allWords.Entries[idx].SimpleDefinition = word.SimpleDefinition
 	c.allWords.Entries[idx].DetailedExplanation = word.DetailedExplanation
@@ -281,6 +281,7 @@ func (c *Chunker) makeCache() {
 
 			if !found {
 				c.currPos++
+				continue
 			}
 
 			c.pushWord(c.rawText[wordStart:wordEnd])
@@ -291,6 +292,7 @@ func (c *Chunker) makeCache() {
 			wordStart, wordEnd, found := getNextWordWithMark(c.rawText, c.currPos, len(c.rawText))
 			if !found {
 				c.currPos++
+				continue
 			}
 			c.pushWord(c.rawText[wordStart:wordEnd])
 			c.currPos = wordEnd

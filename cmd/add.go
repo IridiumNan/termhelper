@@ -126,7 +126,6 @@ func init() {
 }
 
 func readInput(args []string) (string, error) {
-	fmt.Println("fileFlag -> ", fileFlag)
 	if !pkg.IsEmptyStr(fileFlag) {
 		data, err := os.ReadFile(fileFlag)
 		if err != nil {
