@@ -5,11 +5,16 @@ package cmd
 
 import (
 	"fmt"
-	"log"
+	"os"
+	"os/exec"
 
-	"github.com/IridiumNan/termhelper/internal/storage"
+	"github.com/IridiumNan/termhelper/internal/output"
+	"github.com/IridiumNan/termhelper/internal/writer"
+	"github.com/IridiumNan/termhelper/pkg"
 	"github.com/spf13/cobra"
 )
+
+const defaultWordListLimit = 30
 
 // listCmd represents the list command
 var listCmd = &cobra.Command{
@@ -23,20 +28,57 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("list called")
+		// db := storage.GetGlobalWordData()
+		//
+		// words, err := db.GetAllWordEntries()
+		// if err != nil {
+		// 	log.Fatal(err)
+		// 	return
+		// }
+		//
+		// for _, word := range words {
+		// 	word.ColorfulPrint()
+		// }
+		//
+		// defer db.Close()
+		limit := pkg.GetLimitIfValid(args, defaultWordListLimit)
 
-		db := storage.GetGlobalWordData()
+		writer := writer.NewWordWriter()
 
-		words, err := db.GetAllWordEntries()
+		file, err := os.CreateTemp("", "list-*.tmp")
+
+		defer os.Remove(file.Name())
+
 		if err != nil {
-			log.Fatal(err)
+			output.Console.Error("fail to create temp file", "error", err)
+			output.File.Error("fail to create temp file", "error", err)
 			return
 		}
 
-		for _, word := range words {
-			word.ColorfulPrint()
+		hasNext := writer.WriteDueWords(limit, file)
+		if err != nil {
+			fmt.Println(err)
+
+			return
+		}
+		for hasNext {
+			hasNext = writer.WriteDueWords(limit, file)
 		}
 
-		defer db.Close()
+		file.Close()
+
+		lessCmd := exec.Command("less", "-R", file.Name())
+
+		lessCmd.Stdin = os.Stdin
+		lessCmd.Stdout = os.Stdout
+		lessCmd.Stderr = os.Stderr
+
+		if err = lessCmd.Run(); err != nil {
+			output.Console.Error("fail to use less command to open file", "file", file.Name(), "error", err)
+			return
+		}
+
+		fmt.Println("clear the tmp file => ", file.Name())
 	},
 }
 

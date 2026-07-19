@@ -6,13 +6,13 @@ package cmd
 import (
 	"fmt"
 	"log"
-	"strconv"
 
 	"github.com/IridiumNan/termhelper/internal/tester"
+	"github.com/IridiumNan/termhelper/pkg"
 	"github.com/spf13/cobra"
 )
 
-const defaultLimit = 20
+const defaultTestWordLimit = 20
 
 // testCmd represents the test command
 var testCmd = &cobra.Command{
@@ -29,15 +29,7 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("test called")
 
-		limit := defaultLimit
-
-		if len(args) > 0 {
-			num, err := strconv.Atoi(args[0])
-			if err == nil {
-				limit = num
-				fmt.Println("use the limit => ", num)
-			}
-		}
+		limit := pkg.GetLimitIfValid(args, defaultTestWordLimit)
 
 		if limit < 4 {
 			fmt.Println("minimal choice 4, current limit ", limit, " use 4 as the limit ")

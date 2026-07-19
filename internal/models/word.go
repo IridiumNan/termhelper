@@ -53,6 +53,8 @@ type LLMExplainResults struct {
 }
 
 func (word *WordEntry) UpdateProficiency(correct bool) {
+	fmt.Print("update proficiency ", word.Proficiency)
+
 	if correct {
 		word.Proficiency = word.Proficiency + correctStep
 
@@ -60,6 +62,7 @@ func (word *WordEntry) UpdateProficiency(correct bool) {
 			word.Proficiency = 1.0
 		}
 
+		fmt.Print(color.GreenString(" => %f\n\n", word.Proficiency))
 		return
 	}
 
@@ -68,6 +71,8 @@ func (word *WordEntry) UpdateProficiency(correct bool) {
 	if word.Proficiency < 0.0 {
 		word.Proficiency = 0.0
 	}
+
+	fmt.Print(color.RedString(" => %f\n\n", word.Proficiency))
 }
 
 func (word *WordEntry) NextReviewInterval() int64 {
@@ -105,4 +110,12 @@ func (word *WordEntry) ColorfulPrint() {
 	fmt.Printf("word due timestamp; due %d, now %d\n", word.NextReviewTime, time.Now().Unix())
 
 	fmt.Println()
+}
+
+func (word *WordEntry) FileFormat() string {
+	return fmt.Sprintln() + color.YellowString("%s\n", word.Word) +
+		color.HiGreenString("%s\n", word.SimpleDefinition) +
+		color.CyanString("%s\n", word.DetailedExplanation) +
+		fmt.Sprintln("Proficiency => ", word.Proficiency) +
+		fmt.Sprintln("======================================================")
 }

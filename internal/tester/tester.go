@@ -160,9 +160,11 @@ func (t *Tester) askThenPrintAnswer(opts []*option) (quit bool) {
 
 		if allMarks[i] == choice {
 			fmt.Println(op.printDetail(color.New(color.FgRed)))
+
+			continue
 		}
 
-		fmt.Println(op.printDetail(color.New(color.FgHiYellow)))
+		fmt.Println(op.printDetail(color.New(color.FgMagenta)))
 	}
 
 	return

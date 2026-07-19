@@ -20,3 +20,15 @@ func (d *WordData) GetDueWords(wordLimit int) (words []*models.WordEntry, err er
 
 	return
 }
+
+func (d *WordData) GetWordsSortByDue(wordLimit int, skip int) (words []*models.WordEntry, err error) {
+	if wordLimit <= 0 {
+
+		err = d.db.AllByIndex(models.FieldNextReviewTimeStr, &words)
+		return
+	}
+
+	err = d.db.AllByIndex(models.FieldNextReviewTimeStr, &words, storm.Limit(wordLimit), storm.Skip(skip))
+
+	return
+}
