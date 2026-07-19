@@ -1,14 +1,24 @@
 /*
 Copyright © 2026 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
 
+	"github.com/IridiumNan/termhelper/internal/models"
 	"github.com/spf13/cobra"
 )
+
+var currEditorIdx = 0
+
+var editorOptions = []string{
+	"vim",
+	"vi",
+	"nano",
+}
 
 // configCmd represents the config command
 var configCmd = &cobra.Command{
@@ -22,7 +32,52 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("config called")
+
+		editor := getValidEditro()
+
+		configFile := models.GetConfigFilePath()
+
+		editCommand := exec.Command(editor, configFile)
+
+		editCommand.Stdin = os.Stdin
+		editCommand.Stdout = os.Stdout
+		editCommand.Stderr = os.Stderr
+
+		if err := editCommand.Run(); err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		fmt.Println("you can also edit your config here => ", models.GetConfigFilePath())
 	},
+}
+
+func getValidEditro() string {
+	editor := getEnvEditor()
+
+	exist := checkIfExist(editor)
+
+	for !exist {
+
+		currEditorIdx++
+
+		exist = checkIfExist(editorOptions[currEditorIdx])
+	}
+	return editor
+}
+
+func getEnvEditor() string {
+	return os.Getenv("EDITOR")
+}
+
+func checkIfExist(editor string) bool {
+	findCmd := exec.Command("which", editor)
+
+	if err := findCmd.Run(); err != nil {
+		return false
+	}
+
+	return true
 }
 
 func init() {

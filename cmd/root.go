@@ -54,8 +54,6 @@ func init() {
 		fmt.Println(err)
 		return
 	}
-
-	config.PrintConfig()
 }
 
 func initDataDir() error {
