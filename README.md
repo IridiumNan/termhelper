@@ -19,12 +19,24 @@
 
 ---
 
+## DEMO
+
+[demo link](https://repo.waterman.xin/share/termhelper_demo.mp4)
+
+---
+
 ## 安装
 
 ### 前置要求
 
 - Go 1.26+
 - 至少配置一种 LLM 后端（推荐使用 Ollama 本地运行，或 DeepSeek API）
+- Linux
+
+### Download from release link (recommanded)
+
+[v0.0.1-github-link](https://github.com/IridiumNan/termhelper/releases/download/v0.0.1/termhelper-linux-amd64)
+[v0.0.1-gitee-link](https://gitee.com/cai-zixiang_hainan/termhelper/releases/download/v0.0.1/termhelper-linux-amd64)
 
 ### 从源码编译
 
