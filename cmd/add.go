@@ -190,6 +190,10 @@ func writeRawWithOutput(rawText string, words []*models.WordEntry) (tmpFilePath 
 	// 	output.File.Error("error when write rawText to temp file", "file", file.Name())
 	// }
 
+	file.WriteString("===================== input =========================\n\n")
+	file.WriteString(rawText)
+	file.WriteString("\n\n====================================================\n")
+
 	writer := writer.NewWordWriter()
 
 	_ = writer.WriteWords(words, file)
