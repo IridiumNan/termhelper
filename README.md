@@ -35,8 +35,9 @@
 
 ### Download from release link (recommanded)
 
-[v0.0.1-github-link](https://github.com/IridiumNan/termhelper/releases/download/v0.0.1/termhelper-linux-amd64)
-[v0.0.1-gitee-link](https://gitee.com/cai-zixiang_hainan/termhelper/releases/download/v0.0.1/termhelper-linux-amd64)
+[download v0.0.2-binary from github](https://github.com/IridiumNan/termhelper/releases/download/v0.0.2/termhelper)<br>
+
+[download v0.0.2-binary form gitee](https://gitee.com/cai-zixiang_hainan/termhelper/releases/download/v0.0.2/termhelper)<br>
 
 ### 从源码编译
 
