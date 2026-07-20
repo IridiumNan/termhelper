@@ -42,7 +42,7 @@ func (c *OllamaClient) Explain(ctx context.Context, chunk *models.Chunk) (respon
 	}
 	client := api.NewClient(url, c.httpClient)
 
-	prompt := models.NewPrompt(chunk.Words, chunk.Context)
+	prompt := models.NewPrompt(chunk.Words, chunk.Context, config.GetGlobalConfig().PromptMode)
 
 	promptStr, err := prompt.Str()
 	if err != nil {
@@ -81,7 +81,7 @@ func (c *OllamaClient) LegacyExplain(ctx context.Context, chunk *models.Chunk) (
 		return nil, nil
 	}
 
-	prompt := models.NewPrompt(chunk.Words, chunk.Context)
+	prompt := models.NewPrompt(chunk.Words, chunk.Context, config.GetGlobalConfig().PromptMode)
 
 	promptStr, err := prompt.Str()
 	if err != nil {

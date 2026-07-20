@@ -61,7 +61,8 @@ func (word *WordEntry) UpdateProficiency(correct bool) {
 	fmt.Print("update proficiency ", word.Proficiency)
 
 	if correct {
-		word.Proficiency = word.Proficiency + correctStep
+		word.Proficiency += correctStep
+		// word.Proficiency += config.GetGlobalConfig().Test.Proficiency.CorrectIncrement
 
 		if word.Proficiency > 1.0 {
 			word.Proficiency = 1.0
@@ -71,7 +72,8 @@ func (word *WordEntry) UpdateProficiency(correct bool) {
 		return
 	}
 
-	word.Proficiency = word.Proficiency - wrongStep
+	word.Proficiency -= wrongStep
+	// word.Proficiency -= config.GetGlobalConfig().Test.Proficiency.WrongDecrement
 
 	if word.Proficiency < 0.0 {
 		word.Proficiency = 0.0

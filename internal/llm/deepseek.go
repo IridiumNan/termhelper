@@ -38,7 +38,7 @@ func NewDeepSeekClient() *DeepSeekClient {
 }
 
 func (d *DeepSeekClient) Explain(ctx context.Context, chunk *models.Chunk) (response *models.LLMExplainResults, err error) {
-	prompt := models.NewPrompt(chunk.Words, chunk.Context)
+	prompt := models.NewPrompt(chunk.Words, chunk.Context, config.GetGlobalConfig().PromptMode)
 
 	promptStr, err := prompt.Str()
 	if err != nil {

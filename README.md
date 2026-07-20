@@ -163,6 +163,8 @@ termhelper test 20
 # LLM 提供商列表（按顺序尝试）
 providers = ["ollama", "deepseek", "openai"]
 
+# prompt_mode = "en2en"
+prompt_mode = "zh2zh"
 [deepseek]
 api_key = "sk-xxx"           # DeepSeek API 密钥
 model = "deepseek-v4-flash"  # 模型名称

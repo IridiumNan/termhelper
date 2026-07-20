@@ -5,6 +5,14 @@ import (
 	"encoding/json"
 )
 
+// PromptMode controls which language the LLM uses to explain words.
+type PromptMode string
+
+const (
+	PromptModeZh PromptMode = "zh2zh" // Chinese explanation (original behavior)
+	PromptModeEn PromptMode = "en2en" // Simple English explanation
+)
+
 type Prompt struct {
 	Role    string   `json:"role"`
 	Task    string   `json:"task"`
@@ -14,12 +22,24 @@ type Prompt struct {
 	Context string   `json:"context"`
 }
 
-func NewPrompt(words []string, context string) *Prompt {
+func NewPrompt(words []string, context string, mode PromptMode) *Prompt {
+	role := promptRole
+	task := promptTask
+	format := promptFormat
+	example := promptExample
+
+	if mode == PromptModeEn {
+		role = promptEnRole
+		task = promptEnTask
+		format = promptEnFormat
+		example = promptEnExample
+	}
+
 	return &Prompt{
-		Role:    promptRole,
-		Task:    promptTask,
-		Format:  promptFormat,
-		Example: promptExample,
+		Role:    role,
+		Task:    task,
+		Format:  format,
+		Example: example,
 		Words:   words,
 		Context: context,
 	}

@@ -14,6 +14,7 @@ type Config struct {
 	Test         TestConfig         `mapstructure:"test"`
 	Logging      LoggingConfig      `mapstructure:"logging"`
 	WordProvider WordProvider       `mapstructure:"word_provider"`
+	PromptMode   models.PromptMode  `mapstructure:"prompt_mode"`
 }
 
 type WordProvider struct {

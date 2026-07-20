@@ -164,7 +164,7 @@ func (t *Tester) askThenPrintAnswer(opts []*option) (quit bool) {
 			continue
 		}
 
-		fmt.Println(op.printDetail(color.New(color.FgMagenta)))
+		fmt.Println(op.printDetail(color.New(color.FgBlue)))
 	}
 
 	return
