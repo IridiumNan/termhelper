@@ -142,7 +142,15 @@ func (t *Tester) printOptions(options []*option) {
 
 func (t *Tester) askThenPrintAnswer(opts []*option) (quit bool) {
 	var choice mark
-	choice, quit = t.askAnswer()
+	choice, quit, mask := t.askAnswer()
+
+	if mask {
+		// mask this word
+		t.wordPool[t.currPos].MaskWithLongTime()
+
+		fmt.Println(color.RedString("you have masked this word => %s", t.wordPool[t.currPos].Word))
+		return
+	}
 
 	if quit {
 		return
@@ -170,7 +178,7 @@ func (t *Tester) askThenPrintAnswer(opts []*option) (quit bool) {
 	return
 }
 
-func (t *Tester) askAnswer() (choice mark, quit bool) {
+func (t *Tester) askAnswer() (choice mark, quit bool, mask bool) {
 	for {
 		fmt.Print("enter your choice [A-D] (enter q for quit) ->")
 		input, _ := t.reader.ReadString('\n')
@@ -184,6 +192,11 @@ func (t *Tester) askAnswer() (choice mark, quit bool) {
 
 		if choice == mark('Q') {
 			quit = true
+			return
+		}
+
+		if choice == mark('P') {
+			mask = true
 			return
 		}
 

@@ -9,6 +9,7 @@ import (
 
 	"github.com/IridiumNan/termhelper/internal/tester"
 	"github.com/IridiumNan/termhelper/pkg"
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
 
@@ -46,6 +47,8 @@ var testCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		fmt.Println(color.GreenString(" TEST BEGIN, you can enter P for pass the word and it will not disapear again"))
 
 		var hasNext bool
 		for {

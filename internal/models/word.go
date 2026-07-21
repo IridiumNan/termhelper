@@ -35,6 +35,8 @@ const (
 	ProficiencyFamiliar = 0.8
 )
 
+var LONGTIMELATER = time.Now().Add(100 * 365 * 24 * time.Hour).Unix()
+
 type WordEntry struct {
 	Word string `storm:"id"`
 
@@ -89,6 +91,12 @@ func (word *WordEntry) NextReviewInterval() int64 {
 	result := time.Duration(minutes) * time.Minute
 
 	return int64(result.Seconds())
+}
+
+// MaskWithLongTime : update the NextReviewTime to an impossible reach time for mask this word
+func (word *WordEntry) MaskWithLongTime() {
+	word.Proficiency = 1.0
+	word.NextReviewTime = LONGTIMELATER
 }
 
 func (word *WordEntry) UpdateReviewTime() {
