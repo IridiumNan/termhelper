@@ -63,9 +63,12 @@ func getValidEditro() string {
 
 	for !exist {
 
+		fmt.Printf("editor %s not exist, try next", editor)
+
+		editor = editorOptions[currEditorIdx]
+		exist = checkIfExist(editorOptions[currEditorIdx])
 		currEditorIdx++
 
-		exist = checkIfExist(editorOptions[currEditorIdx])
 	}
 	return editor
 }
