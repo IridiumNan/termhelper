@@ -100,7 +100,7 @@ func (word *WordEntry) MaskWithLongTime() {
 }
 
 func (word *WordEntry) UpdateReviewTime() {
-	word.NextReviewTime = word.NextReviewTime + int64(word.NextReviewInterval()) - hourSecond
+	word.NextReviewTime = time.Now().Unix() + int64(word.NextReviewInterval())
 }
 
 func (word *WordEntry) ColorfulPrint() {
