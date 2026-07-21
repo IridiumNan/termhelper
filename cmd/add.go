@@ -143,7 +143,7 @@ func readInput(args []string) (string, error) {
 	}
 
 	if len(args) > 0 {
-		return strings.Join(args, ""), nil
+		return strings.Join(args, " "), nil
 	}
 
 	return readStdin()
