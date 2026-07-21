@@ -5,7 +5,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/IridiumNan/termhelper/internal/tester"
 	"github.com/IridiumNan/termhelper/pkg"
@@ -45,7 +44,9 @@ var testCmd = &cobra.Command{
 
 		tester, err := tester.NewTester(limit)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
+			fmt.Println("maybe you have finish all words review, you can use `termhelper status` command to see it")
+			return
 		}
 
 		fmt.Println(color.GreenString(" TEST BEGIN, you can enter P for pass the word and it will not disapear again"))
