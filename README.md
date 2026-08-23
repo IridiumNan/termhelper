@@ -241,11 +241,16 @@ termhelper/
 ├── pkg/                     # 通用工具函数
 ├── demo/                    # 示例与演示代码
 ├── plan/                    # 开发计划文档
+├── design                   # 设计文档
 ├── Makefile                 # 跨平台编译
 └── go.mod                   # Go 模块定义
 ```
 
 ---
+
+## 设计文档
+
+设计分析和文档请参考 [design.md](/design.md)
 
 ## 许可证
 
