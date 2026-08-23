@@ -11,7 +11,11 @@ import (
 )
 
 type LLMClient interface {
+	// Explain function explain words on the chunk and return Results which can be parased and push to database
 	Explain(ctx context.Context, chunk *models.Chunk) (response *models.LLMExplainResults, err error)
+
+	// Ping function test if this LLM Provider is available
+	// Just check the network
 	Ping(ctx context.Context) error
 }
 

@@ -13,6 +13,9 @@ type WordProvider interface {
 	provide(word string) (entry *models.WordEntry, found bool)
 }
 
+// DisabledProvider store the disabledWords
+// If word match in this word slices
+// It will return empty str for Definition and Detail with a disabledProficiency
 type DisabledProvider struct {
 	disabledWords []string
 }
@@ -23,6 +26,9 @@ func newDisabledProvider(disabledWords []string) *DisabledProvider {
 	}
 }
 
+// disabledWords provide
+// This function provide word Entry with All attributes empty
+// Mark this as disabledProficiency so that it will not display
 func (dp *DisabledProvider) provide(word string) (entry *models.WordEntry, found bool) {
 	if slices.Contains(dp.disabledWords, word) {
 		return &models.WordEntry{
@@ -47,6 +53,8 @@ func newDicProvider() *DicProvider {
 	}
 }
 
+// DicProvider provide
+// This provide func query this word from database then return entry
 func (dp *DicProvider) provide(word string) (entry *models.WordEntry, found bool) {
 	// if the wordData init failed, wordData will be nil
 	if dp.wordData == nil {
@@ -66,12 +74,17 @@ func (dp *DicProvider) provide(word string) (entry *models.WordEntry, found bool
 	return
 }
 
+// defaultProvider catch all brand new words and construct a new WordEntry Then return
 type defaultProvider struct{}
 
+// newDefaultProvider Return the DefaultProvider which handle all remaining words
 func newDefaultProvider() *defaultProvider {
 	return &defaultProvider{}
 }
 
+// defaultProvider provide
+// Just not forbidden words or not found on database words will enter this provide
+// So return found = false
 func (np *defaultProvider) provide(word string) (entry *models.WordEntry, found bool) {
 	return &models.WordEntry{
 		Word:                word,

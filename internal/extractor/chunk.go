@@ -148,6 +148,12 @@ func (c *Chunker) pushExistWord(word *models.WordEntry) {
 	c.allWords.IsNewMap[word.Word] = false
 }
 
+// pushWord This function tranverse all providers
+// Words can comes from
+// NOTE:
+// disabledProvider : When the word is disabled
+// dicProvider 		: When the word exists on the database
+// defaultProvider  : When the word is brand new for termhelper
 func (c *Chunker) pushWord(word string) {
 	cleanWord := strings.Trim(strings.ToLower(word), ".,!?;:()\"'")
 	// if it's not word, return
@@ -166,6 +172,8 @@ func (c *Chunker) pushWord(word string) {
 		}
 	}
 
+	// When the word is catched by defaultProvider
+	// The finnally found bool == false
 	if !found {
 
 		c.pushNewWord(wordEntry)
